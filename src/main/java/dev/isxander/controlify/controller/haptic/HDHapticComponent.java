@@ -5,19 +5,28 @@ import dev.isxander.controlify.controller.serialization.ConfigHolder;
 import dev.isxander.controlify.controller.ECSComponent;
 import dev.isxander.controlify.controller.serialization.IConfig;
 import dev.isxander.controlify.controller.impl.ConfigImpl;
+import dev.isxander.controlify.mixins.feature.hdhaptics.SoundBufferAccessor;
+import dev.isxander.controlify.mixins.feature.hdhaptics.SoundEngineAccessor;
+import dev.isxander.controlify.mixins.feature.hdhaptics.SoundManagerAccessor;
 import dev.isxander.controlify.utils.CUtil;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.sounds.SoundBufferLibrary;
+import net.minecraft.client.sounds.SoundEngine;
+import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.RandomSource;
 
+import javax.sound.sampled.AudioFormat;
+import java.nio.ByteBuffer;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 public class HDHapticComponent implements ECSComponent, ConfigHolder<HDHapticComponent.Config> {
     public static final ResourceLocation ID = CUtil.rl("hd_haptics");
 
     private final IConfig<Config> config = new ConfigImpl<>(Config::new, Config.class);
-    private Consumer<HapticBufferLibrary.HapticBuffer> playHapticConsumer;
+    private Consumer<CompleteSoundData> playHapticConsumer;
     private final RandomSource randomSource;
 
     public HDHapticComponent() {
@@ -27,8 +36,7 @@ public class HDHapticComponent implements ECSComponent, ConfigHolder<HDHapticCom
     public void playHaptic(ResourceLocation haptic) {
         if (!confObj().enabled || playHapticConsumer == null) return;
 
-        HapticBufferLibrary.INSTANCE.getHaptic(haptic)
-                .thenAccept(playHapticConsumer);
+        getSoundData(haptic).thenAccept(playHapticConsumer);
     }
 
     public void playHaptic(SoundEvent sound) {
@@ -38,8 +46,30 @@ public class HDHapticComponent implements ECSComponent, ConfigHolder<HDHapticCom
         this.playHaptic(CUtil.rl(location.getNamespace(), "sounds/" + location.getPath() + ".ogg"));
     }
 
-    public void acceptPlayHaptic(Consumer<HapticBufferLibrary.HapticBuffer> consumer) {
+    public void acceptPlayHaptic(Consumer<CompleteSoundData> consumer) {
         this.playHapticConsumer = consumer;
+    }
+
+    private CompletableFuture<CompleteSoundData> getSoundData(ResourceLocation sound) {
+        SoundManager soundManager = Minecraft.getInstance().getSoundManager();
+        SoundEngine soundEngine = ((SoundManagerAccessor) soundManager).getSoundEngine();
+        SoundBufferLibrary bufferLibrary = ((SoundEngineAccessor) soundEngine).getSoundBuffers();
+
+        return bufferLibrary.getCompleteBuffer(sound)
+                .thenApply(soundBuffer -> {
+                    var accessor = (SoundBufferAccessor) soundBuffer;
+                    ByteBuffer bytes = accessor.getData();
+                    AudioFormat format = accessor.getFormat();
+
+                    if (bytes == null) {
+                        return null;
+                    }
+
+                    byte[] audio = new byte[bytes.capacity()];
+                    bytes.get(audio);
+
+                    return new CompleteSoundData(audio, format);
+                });
     }
 
     @Override

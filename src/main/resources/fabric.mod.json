@@ -35,7 +35,6 @@
     "${mixins}"
   ],
   "icon": "icon.png",
-  "accessWidener": "controlify.accesswidener",
   "depends": {
     "fabricloader": ">=0.15.0",
     "minecraft": "${mc}",

@@ -48,10 +48,7 @@ val mixins = mapOf(
     .filterNotNull()
     .map { "$it.mixins.json" }
 
-val accessWidenerName = "controlify.accesswidener"
 loom {
-    accessWidenerPath.set(project.file("src/main/resources/$accessWidenerName"))
-
     if (stonecutter.current.isActive) { // only generate active project run config as the rest would be invalid
         runConfigs.all {
             ideConfigGenerated(true)
@@ -71,7 +68,6 @@ loom {
 
     if (isForge) {
         forge {
-            convertAccessWideners.set(true)
             mixins.forEach { mixinConfig(it) }
         }
     }
@@ -299,12 +295,6 @@ val offlineRemapJar by tasks.registering(RemapJarTask::class) {
 }
 
 tasks.build { dependsOn(offlineRemapJar) }
-
-tasks.remapJar {
-    if (isNeoforge) {
-        atAccessWideners.add(accessWidenerName)
-    }
-}
 
 java {
     withSourcesJar()

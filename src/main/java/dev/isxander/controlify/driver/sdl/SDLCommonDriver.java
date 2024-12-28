@@ -8,8 +8,8 @@ import dev.isxander.controlify.controller.ControllerEntity;
 import dev.isxander.controlify.controller.battery.BatteryLevelComponent;
 import dev.isxander.controlify.controller.battery.PowerState;
 import dev.isxander.controlify.controller.dualsense.DualSenseComponent;
+import dev.isxander.controlify.controller.haptic.CompleteSoundData;
 import dev.isxander.controlify.controller.haptic.HDHapticComponent;
-import dev.isxander.controlify.controller.haptic.HapticBufferLibrary;
 import dev.isxander.controlify.controller.id.ControllerType;
 import dev.isxander.controlify.controller.misc.BluetoothDeviceComponent;
 import dev.isxander.controlify.controller.rumble.RumbleComponent;
@@ -242,7 +242,7 @@ public abstract class SDLCommonDriver<SDL_Controller> implements Driver {
         }
     }
 
-    private void playHaptic(HapticBufferLibrary.HapticBuffer sound) {
+    private void playHaptic(CompleteSoundData sound) {
         if (ptrController == null || dualsenseAudioDev == null || dualsenseAudioSpec == null) {
             return;
         }
@@ -371,16 +371,16 @@ public abstract class SDLCommonDriver<SDL_Controller> implements Driver {
             SDL_AudioStream stream = SDL_CreateAudioStream(audioSpec, devSpec);
             SDL_BindAudioStream(device, stream);
 
+            int[] channelMap = switch (audioSpec.channels) {
+                case 1 -> new int[]{ -1, -1, 0, 0 };
+                case 2 -> new int[]{ -1, -1, 0, 1 };
+                default -> throw new IllegalStateException("Unsupported channel count " + audioSpec.channels);
+            };
+            SDL_SetAudioStreamOutputChannelMap(stream, channelMap);
+
             var handle = new AudioStreamHandle(stream, audioSpec);
             handle.queueAudio(audio, tickLength);
             return handle;
-        }
-
-        public static AudioStreamHandle createWithInitialTimeout(SDL_AudioDeviceID device, SDL_AudioSpec srcSpec, SDL_AudioSpec devSpec) {
-            SDL_AudioStream stream = SDL_CreateAudioStream(srcSpec, devSpec);
-            SDL_BindAudioStream(device, stream);
-
-            return new AudioStreamHandle(stream, srcSpec);
         }
     }
 }
