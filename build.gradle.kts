@@ -1,16 +1,18 @@
-@file:Suppress("UnstableApiUsage")
-
 import net.fabricmc.loom.task.RemapJarTask
 import org.gradle.configurationcache.extensions.capitalized
 
 plugins {
-    `java-library`
+    val modstitchVersion = "0.3.0"
+    id("dev.isxander.modstitch.base") version modstitchVersion
+    id("dev.isxander.modstitch.publishing") version modstitchVersion
 
-    id("dev.architectury.loom")
     id("dev.kikugie.j52j") version "1.0.2"
+}
 
-    id("me.modmuss50.mod-publish-plugin")
-    `maven-publish`
+fun prop(name: String, required: Boolean = false, consumer: (prop: String) -> Unit) {
+    (findProperty(name) as? String?)
+        ?.let(consumer)
+        ?: if (required) error("Property $name is required") else null
 }
 
 // version stuff
@@ -18,62 +20,89 @@ val mcVersion = property("mcVersion")!!.toString()
 val mcSemverVersion = stonecutter.current.version
 
 // loader stuff
-val loader = loom.platform.get().name.lowercase()
-val isFabric = loader == "fabric"
-val isNeoforge = loader == "neoforge"
-val isForge = loader == "forge"
-val isForgeLike = isNeoforge || isForge
+val isFabric = modstitch.isLoom
+val isNeoforge = modstitch.isModDevGradleRegular
+val isForge = modstitch.isModDevGradleLegacy
+val isForgeLike = modstitch.isModDevGradle
+val loader = when {
+    isFabric -> "fabric"
+    isNeoforge -> "neoforge"
+    isForge -> "forge"
+    else -> error("Unknown loader")
+}
 
-// project stuff
-group = "dev.isxander"
 val versionWithoutMC = property("modVersion")!!.toString()
-version = "$versionWithoutMC+${stonecutter.current.project}"
-val isAlpha = "alpha" in version.toString()
-val isBeta = "beta" in version.toString()
-base.archivesName.set(property("modName").toString())
 
-// Conditionally include the mixins for the mods this target is compatible with
-// Generates a list of mixin file names for processResources to include in the manifests
-val mixins = mapOf(
-    "controlify" to true,
-    "controlify-compat.iris" to isPropDefined("deps.iris"),
-    "controlify-compat.sodium" to isPropDefined("deps.sodium"),
-    "controlify-compat.reeses-sodium-options" to isPropDefined("deps.reesesSodiumOptions"),
-    "controlify-compat.yacl" to true,
-    "controlify-compat.simple-voice-chat" to isPropDefined("deps.simpleVoiceChat"),
-    "controlify-platform.fabric" to isFabric,
-    "controlify-platform.neoforge" to isNeoforge,
-)
-    .map { (k, v) -> if (v) k else null }
-    .filterNotNull()
-    .map { "$it.mixins.json" }
+modstitch {
+    minecraftVersion = mcVersion
+    javaTarget = 17
 
-loom {
-    if (stonecutter.current.isActive) { // only generate active project run config as the rest would be invalid
-        runConfigs.all {
-            ideConfigGenerated(true)
+    metadata {
+        modId = "controlify"
+        modName = "Controlify"
+        modVersion = "$versionWithoutMC+${stonecutter.current.project}"
+        modGroup = "dev.isxander"
+        modLicense = "LGPL-3.0"
+        modAuthor = "isXander"
+        prop("modDescription") { modDescription = it }
 
-            // use a single run directory for all targets (targets are two folders deep from root)
-            runDir("../../run")
+        prop("packFormat") { replacementProperties.put("pack_format", it) }
+        prop("githubProject") { replacementProperties.put("github", it) }
+        prop("meta.mcDep") { replacementProperties.put("mc", it) }
+        prop("meta.loaderDep") { replacementProperties.put("loaderVersion", it) }
+        prop("meta.fapiDep") { replacementProperties.put("fapi", it) }
 
-            // Loom messes with LWJGL version. It's not the one that ships with MC and Sodium doesn't like it
-            vmArgs("-Dsodium.checks.issue2561=false")
+
+        if (isNeoforge && stonecutter.eval(stonecutter.current.version, "<=1.20.4")) {
+            modLoaderManifest = "META-INF/mods.toml" // neoforge used to use this
         }
+    }
+
+    loom {
+        prop("deps.fabricLoader", required = true) { fabricLoaderVersion = it }
+
+        configureLoom {
+            if (stonecutter.current.isActive) { // only generate active project run config as the rest would be invalid
+                runConfigs.all {
+                    ideConfigGenerated(true)
+
+                    // use a single run directory for all targets (targets are two folders deep from root)
+                    runDir("../../run")
+
+                    // Loom messes with LWJGL version. It's not the one that ships with MC and Sodium doesn't like it
+                    vmArgs("-Dsodium.checks.issue2561=false")
+                }
+            }
+
+            // MixinExtras expressions do not support tiny remapper for now.
+            mixin.useLegacyMixinAp.set(true)
+        }
+    }
+
+    moddevgradle {
+        prop("deps.forge", required = true) { forgeVersion = it }
     }
 
     mixin {
-        // MixinExtras expressions do not support tiny remapper for now.
-        useLegacyMixinAp.set(true)
-    }
-
-    if (isForge) {
-        forge {
-            mixins.forEach { mixinConfig(it) }
-        }
+        configs.register("controlify")
+        if (isPropDefined("deps.iris")) configs.register("controlify-compat.iris")
+        if (isPropDefined("deps.sodium")) configs.register("controlify-compat.sodium")
+        if (isPropDefined("deps.reesesSodiumOptions")) configs.register("controlify-compat.reeses-sodium-options")
+        configs.register("controlify-compat.yacl")
+        if (isPropDefined("deps.simpleVoiceChat")) configs.register("controlify-compat.simple-voice-chat")
+        if (isFabric) configs.register("controlify-platform.fabric")
+        if (isNeoforge) configs.register("controlify-platform.neoforge")
     }
 }
 
 stonecutter {
+    consts(
+        "fabric" to modstitch.isLoom,
+        "neoforge" to modstitch.isModDevGradleRegular,
+        "forge" to modstitch.isModDevGradleLegacy,
+        "forgelike" to modstitch.isModDevGradle,
+    )
+
     val sodiumSemver = findProperty("deps.sodiumSemver")?.toString() ?: "0.0.0"
     dependencies(
         "fapi" to (findProperty("deps.fabricApi")?.toString() ?: "0.0.0"),
@@ -84,36 +113,34 @@ stonecutter {
         "net.caffeinemc.mods.sodium" else "me.jellysquid.mods.sodium"
 }
 
+repositories {
+    mavenCentral()
+    maven("https://maven.terraformersmc.com")
+    maven("https://maven.isxander.dev/releases")
+    maven("https://maven.isxander.dev/snapshots")
+    maven("https://maven.quiltmc.org/repository/release")
+}
+
 dependencies {
-    fun Dependency?.jij() = this?.also(::include)
-    fun Dependency?.forgeRuntime() = this?.also { if (isForgeLike) "forgeRuntimeLibrary"(it) }
-
-    minecraft("com.mojang:minecraft:$mcVersion")
-    mappings(loom.layered {
-        optionalProp("deps.parchment") {
-            parchment("org.parchmentmc.data:parchment-$it@zip")
-        }
-
-        officialMojangMappings()
-    })
+    fun Dependency?.jij() = this?.also(::modstitchJiJ)
 
     optionalProp("deps.mixinExtras") {
         if (isForgeLike) {
             compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:$it")!!)
             if (isNeoforge) {
-                implementation(include("io.github.llamalad7:mixinextras-neoforge:$it")!!)
+                implementation("io.github.llamalad7:mixinextras-neoforge:$it").jij()
             } else {
-                implementation(include("io.github.llamalad7:mixinextras-forge:$it")!!)
+                implementation("io.github.llamalad7:mixinextras-forge:$it").jij()
             }
         } else {
-            include(implementation(annotationProcessor("io.github.llamalad7:mixinextras-fabric:$it")!!)!!)
+            implementation(annotationProcessor("io.github.llamalad7:mixinextras-fabric:$it")!!).jij()
         }
     }
 
     fun modDependency(id: String, artifactGetter: (String) -> String, extra: (Boolean) -> Unit = {}) {
         optionalProp("deps.$id") {
             val noRuntime = findProperty("deps.$id.noRuntime")?.toString()?.toBoolean() == true
-            val configuration = if (noRuntime) "modCompileOnly" else "modImplementation"
+            val configuration = if (noRuntime) "modstitchModCompileOnly" else "modstitchModImplementation"
 
             configuration(artifactGetter(it))
 
@@ -122,59 +149,37 @@ dependencies {
     }
 
     if (isFabric) {
-        modImplementation("net.fabricmc:fabric-loader:${property("deps.fabricLoader")}")
-
-        val fapiVersion = property("deps.fabricApi").toString()
-        listOf(
-            "fabric-resource-loader-v0",
-            "fabric-lifecycle-events-v1",
-            "fabric-key-binding-api-v1",
-            "fabric-registry-sync-v0",
-            "fabric-screen-api-v1",
-            "fabric-command-api-v2",
-            "fabric-networking-api-v1",
-            "fabric-item-group-api-v1",
-            "fabric-rendering-v1",
-            "fabric-transitive-access-wideners-v1",
-        ).forEach {
-            modImplementation(fabricApi.module(it, fapiVersion))
-        }
-        // so you can do `depends: fabric-api` in FMJ
-        modRuntimeOnly("net.fabricmc.fabric-api:fabric-api:$fapiVersion")
+        modDependency("fabricApi", { "net.fabricmc.fabric-api:fabric-api:$it" })
 
         // mod menu compat
         modDependency("modMenu", { "com.terraformersmc:modmenu:$it" })
-    } else if (isNeoforge) {
-        "neoForge"("net.neoforged:neoforge:${findProperty("deps.neoforge")}")
-    } else if (isForge) {
-        "forge"("net.minecraftforge:forge:${findProperty("deps.forge")}")
     }
 
-    modApi("dev.isxander:yet-another-config-lib:${property("deps.yacl")}") {
+    modstitchModApi("dev.isxander:yet-another-config-lib:${property("deps.yacl")}") {
         // was including old fapi version that broke things at runtime
         exclude(group = "net.fabricmc.fabric-api", module = "fabric-api")
         exclude(group = "thedarkcolour")
-    }.forgeRuntime()
+    }
 
     // bindings for SDL3
-    api("dev.isxander:libsdl4j:${property("deps.sdl3Target")}-${property("deps.sdl34jBuild")}")
-        .forgeRuntime().jij()
+    modstitchApi("dev.isxander:libsdl4j:${property("deps.sdl3Target")}-${property("deps.sdl34jBuild")}")
+        .jij()
 
     // steam deck bindings
-    api("dev.isxander:steamdeck4j:${property("deps.steamdeck4j")}")
-        .forgeRuntime().jij()
+    modstitchApi("dev.isxander:steamdeck4j:${property("deps.steamdeck4j")}")
+        .jij()
 
     // used to identify controller PID/VID when SDL is not available
-    api("org.hid4java:hid4java:${property("deps.hid4java")}")
-        .forgeRuntime().jij()
+    modstitchApi("org.hid4java:hid4java:${property("deps.hid4java")}")
+        .jij()
 
     // A json5 reader that hooks into gson
     listOf(
         "json",
         "gson",
     ).forEach {
-        api("org.quiltmc.parsers:$it:${property("deps.quiltParsers")}")
-            .jij().forgeRuntime()
+        modstitchApi("org.quiltmc.parsers:$it:${property("deps.quiltParsers")}")
+            .jij()
     }
 
     // sodium compat
@@ -186,15 +191,15 @@ dependencies {
     // iris compat
     modDependency("iris", { "maven.modrinth:iris:$it" }) { runtime ->
         if (runtime) {
-            modRuntimeOnly("org.anarres:jcpp:1.4.14")
-            modRuntimeOnly("io.github.douira:glsl-transformer:2.0.0-pre13")
+            modstitchModLocalRuntime("org.anarres:jcpp:1.4.14")
+            modstitchModLocalRuntime("io.github.douira:glsl-transformer:2.0.0-pre13")
         }
     }
 
     // immediately-fast compat
     modDependency("immediatelyFast", { "maven.modrinth:immediatelyfast:$it" }) { runtime ->
         if (runtime) {
-            modRuntimeOnly("net.lenni0451:Reflect:1.1.0")
+            modstitchModLocalRuntime("net.lenni0451:Reflect:1.1.0")
         }
     }
 
@@ -206,60 +211,7 @@ dependencies {
 }
 
 tasks {
-    processResources {
-        val modId: String by project
-        val modName: String by project
-        val modDescription: String by project
-        val githubProject: String by project
-        val packFormat: String by project
-
-        val props = buildMap {
-            put("id", modId)
-            put("group", project.group)
-            put("name", modName)
-            put("description", modDescription)
-            put("version", project.version)
-            put("github", githubProject)
-            put("pack_format", packFormat)
-
-            if (isFabric) {
-                put("mc", findProperty("fmj.mcDep"))
-                put("mixins", mixins.joinToString("\",\""))
-                put("fapi", findProperty("fmj.fapiDep") ?: "*")
-            }
-
-            if (isForgeLike) {
-                put("mc", findProperty("modstoml.mcDep"))
-                put("loaderVersion", findProperty("modstoml.loaderVersion"))
-                put("forgeId", findProperty("modstoml.forgeId"))
-                put("forgeConstraint", findProperty("modstoml.forgeConstraint"))
-                put("mixins", mixins.joinToString("\n\n") { """
-                    [[mixins]]
-                    config = "$it"
-                """.trimIndent() })
-            }
-        }
-        props.forEach(inputs::property)
-
-        val fabricModJson = "fabric.mod.json"
-        val modsToml = "META-INF/mods.toml"
-        val neoforgeModsToml = "META-INF/neoforge.mods.toml"
-        val metadataFiles = listOf(
-            fabricModJson, modsToml, neoforgeModsToml,
-        )
-        val modMetadataFile = when {
-            isFabric -> fabricModJson
-            isNeoforge && stonecutter.eval(stonecutter.current.version, ">=1.20.5") -> neoforgeModsToml
-            isForgeLike -> modsToml
-            else -> error("Unknown loader")
-        }
-
-        filesMatching(listOf(modMetadataFile, "**/pack.mcmeta")) {
-            expand(props)
-        }
-
-        exclude(metadataFiles - modMetadataFile)
-
+    generateModMetadata {
         eachFile {
             // don't include photoshop files for the textures for development
             if (name.endsWith(".psd")) {
@@ -279,126 +231,115 @@ tasks {
     }
 }
 
-// Builds a jar that bundles all required natives for use offline, or when servers go down.
-val offlineRemapJar by tasks.registering(RemapJarTask::class) {
+val offlineJar by tasks.registering(Jar::class) {
     group = "offline"
 
+    // ensure the input jar is built
+    val inputJar = when {
+        modstitch.isLoom -> tasks.named<Jar>("remapJar")
+        modstitch.isModDevGradleRegular -> tasks.jar
+        modstitch.isModDevGradleLegacy -> tasks.named<Jar>("reobfJar")
+        else -> error("Unknown loader")
+    }
+    dependsOn(inputJar)
+
+    // ensure the natives are downloaded
     val downloadTask = rootProject.tasks["downloadOfflineNatives"]
-
-    dependsOn(tasks.jar)
     dependsOn(downloadTask)
-    inputFile.set(tasks.jar.get().archiveFile.get().asFile)
 
+    // include the contents of the input jar
+    from(zipTree(inputJar.flatMap { it.archiveFile }))
+
+    // add the natives
     from(downloadTask.outputs.files)
 
+    // set the classifier
     archiveClassifier.set("offline")
 }
+tasks.build { dependsOn(offlineJar) }
 
-tasks.build { dependsOn(offlineRemapJar) }
+msPublishing {
+    mpp {
+        from(rootProject.publishMods)
+        dryRun.set(rootProject.publishMods.dryRun)
 
-java {
-    withSourcesJar()
+        additionalFiles.setFrom(offlineJar.map { it.archiveFile })
 
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
-}
+        displayName.set("$versionWithoutMC for $loader $mcVersion")
 
-tasks.withType<JavaCompile> {
-    options.release = project.property("java.version").toString().toInt()
-}
+        fun versionList(prop: String) = findProperty(prop)?.toString()
+            ?.split(',')
+            ?.map { it.trim() }
+            ?: emptyList()
 
-publishMods {
-    from(rootProject.publishMods)
-    dryRun.set(rootProject.publishMods.dryRun)
+        // modrinth and curseforge use different formats for snapshots. this can be expressed globally
+        val stableMCVersions = versionList("pub.stableMC")
 
-    file.set(tasks.remapJar.get().archiveFile)
-    additionalFiles.setFrom(offlineRemapJar.get().archiveFile)
+        val modrinthId: String by project
+        if (modrinthId.isNotBlank() && hasProperty("modrinth.token")) {
+            modrinth {
+                projectId.set(modrinthId)
+                accessToken.set(findProperty("modrinth.token")?.toString())
+                minecraftVersions.addAll(stableMCVersions)
+                minecraftVersions.addAll(versionList("pub.modrinthMC"))
 
-    modLoaders.add(loader)
+                announcementTitle = "Download $mcVersion for ${loader.capitalized()} from Modrinth"
 
-    displayName.set("$versionWithoutMC for $loader $mcVersion")
+                requires { slug.set("yacl") }
 
-    fun versionList(prop: String) = findProperty(prop)?.toString()
-        ?.split(',')
-        ?.map { it.trim() }
-        ?: emptyList()
-
-    // modrinth and curseforge use different formats for snapshots. this can be expressed globally
-    val stableMCVersions = versionList("pub.stableMC")
-
-    val modrinthId: String by project
-    if (modrinthId.isNotBlank() && hasProperty("modrinth.token")) {
-        modrinth {
-            projectId.set(modrinthId)
-            accessToken.set(findProperty("modrinth.token")?.toString())
-            minecraftVersions.addAll(stableMCVersions)
-            minecraftVersions.addAll(versionList("pub.modrinthMC"))
-
-            announcementTitle = "Download $mcVersion for ${loader.capitalized()} from Modrinth"
-
-            requires { slug.set("yacl") }
-
-            if (isFabric) {
-                requires { slug.set("fabric-api") }
-                optional { slug.set("modmenu") }
-            }
-        }
-    }
-
-    val curseforgeId: String by project
-    if (curseforgeId.isNotBlank() && hasProperty("curseforge.token")) {
-        curseforge {
-            projectId = curseforgeId
-            projectSlug = findProperty("curseforgeSlug")!!.toString()
-            accessToken = findProperty("curseforge.token")?.toString()
-            minecraftVersions.addAll(stableMCVersions)
-            minecraftVersions.addAll(versionList("pub.curseMC"))
-
-            announcementTitle = "Download $mcVersion for ${loader.capitalized()} from CurseForge"
-
-            requires { slug.set("yacl") }
-
-            if (isFabric) {
-                requires { slug.set("fabric-api") }
-                optional { slug.set("modmenu") }
-            }
-        }
-    }
-
-    val githubProject: String by project
-    if (githubProject.isNotBlank() && hasProperty("github.token")) {
-        github {
-            accessToken = findProperty("github.token")?.toString()
-
-            // will upload files to this parent task
-            parent(rootProject.tasks.named("publishGithub"))
-        }
-    }
-}
-
-publishing {
-    publications {
-        create<MavenPublication>("mod") {
-            groupId = "dev.isxander"
-            artifactId = "controlify"
-
-            from(components["java"])
-        }
-    }
-
-    repositories {
-        val username = "XANDER_MAVEN_USER".let { System.getenv(it) ?: findProperty(it) }?.toString()
-        val password = "XANDER_MAVEN_PASS".let { System.getenv(it) ?: findProperty(it) }?.toString()
-        if (username != null && password != null) {
-            maven(url = "https://maven.isxander.dev/releases") {
-                name = "XanderReleases"
-                credentials {
-                    this.username = username
-                    this.password = password
+                if (isFabric) {
+                    requires { slug.set("fabric-api") }
+                    optional { slug.set("modmenu") }
                 }
             }
-        } else {
-            println("Xander Maven credentials not satisfied.")
+        }
+
+        val curseforgeId: String by project
+        if (curseforgeId.isNotBlank() && hasProperty("curseforge.token")) {
+            curseforge {
+                projectId = curseforgeId
+                projectSlug = findProperty("curseforgeSlug")!!.toString()
+                accessToken = findProperty("curseforge.token")?.toString()
+                minecraftVersions.addAll(stableMCVersions)
+                minecraftVersions.addAll(versionList("pub.curseMC"))
+
+                announcementTitle = "Download $mcVersion for ${loader.capitalized()} from CurseForge"
+
+                requires { slug.set("yacl") }
+
+                if (isFabric) {
+                    requires { slug.set("fabric-api") }
+                    optional { slug.set("modmenu") }
+                }
+            }
+        }
+
+        val githubProject: String by project
+        if (githubProject.isNotBlank() && hasProperty("github.token")) {
+            github {
+                accessToken = findProperty("github.token")?.toString()
+
+                // will upload files to this parent task
+                parent(rootProject.tasks.named("publishGithub"))
+            }
+        }
+    }
+
+    maven {
+        repositories {
+            val username = "XANDER_MAVEN_USER".let { System.getenv(it) ?: findProperty(it) }?.toString()
+            val password = "XANDER_MAVEN_PASS".let { System.getenv(it) ?: findProperty(it) }?.toString()
+            if (username != null && password != null) {
+                maven(url = "https://maven.isxander.dev/releases") {
+                    name = "XanderReleases"
+                    credentials {
+                        this.username = username
+                        this.password = password
+                    }
+                }
+            } else {
+                println("Xander Maven credentials not satisfied.")
+            }
         }
     }
 }

@@ -1,7 +1,6 @@
 import de.undercouch.gradle.tasks.download.Download
 
 plugins {
-    id("dev.architectury.loom") version "1.7.414+" apply false
     id("me.modmuss50.mod-publish-plugin") version "0.6.1+"
     id("org.ajoberstar.grgit") version "5.0.+"
     id("dev.kikugie.stonecutter")
@@ -27,15 +26,9 @@ val releaseMod by tasks.registering {
 }
 
 stonecutter.parameters {
-    val platform = node!!.property("loom.platform")
-
     fun String.propDefined() = node!!.findProperty(this)?.toString()?.isNotBlank() ?: false
     consts(
         listOf(
-            "fabric" to (platform == "fabric"),
-            "forge" to (platform == "forge"),
-            "neoforge" to (platform == "neoforge"),
-            "forgelike" to (platform == "forge" || platform == "neoforge"),
             "immediately-fast" to "deps.immediatelyFast".propDefined(),
             "iris" to "deps.iris".propDefined(),
             "mod-menu" to "deps.modMenu".propDefined(),
@@ -47,26 +40,6 @@ stonecutter.parameters {
     )
 }
 
-subprojects {
-    repositories {
-        mavenCentral()
-        maven("https://maven.terraformersmc.com")
-        maven("https://maven.isxander.dev/releases")
-        maven("https://maven.isxander.dev/snapshots")
-        maven("https://maven.parchmentmc.org")
-        maven("https://maven.quiltmc.org/repository/release")
-        exclusiveContent {
-            forRepository { maven("https://api.modrinth.com/maven") }
-            filter { includeGroup("maven.modrinth") }
-        }
-        exclusiveContent {
-            forRepository { maven("https://cursemaven.com") }
-            filter { includeGroup("curse.maven") }
-        }
-        maven("https://maven.neoforged.net/releases/")
-    }
-}
-
 val sdl3Target = property("deps.sdl3Target")!!.toString()
 
 data class NativesDownload(
@@ -76,7 +49,7 @@ data class NativesDownload(
     val taskName: String
 )
 
-val downloadNativesTasks = listOf(
+listOf(
     NativesDownload("windows-x86_64", "dll", "win32-x86-64", "WinX86_64"),
     NativesDownload("windows-x86", "dll", "win32-x86", "WinX86"),
     NativesDownload("linux-x86_64", "so", "linux-x86-64", "LinuxX86_64"),
