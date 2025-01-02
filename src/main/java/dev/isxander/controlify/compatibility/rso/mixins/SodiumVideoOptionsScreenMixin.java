@@ -1,5 +1,5 @@
 //? if reeses-sodium-options {
-/*package dev.isxander.controlify.compatibility.rso.mixins;
+package dev.isxander.controlify.compatibility.rso.mixins;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import dev.isxander.controlify.compatibility.sodium.screenop.SodiumGuiScreenProcessor;
@@ -21,9 +21,10 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.List;
+import java.util.Optional;
 
-import /^$ sodium-package >>^/ net.caffeinemc.mods.sodium .client.gui.widgets.FlatButtonWidget;
-import /^$ sodium-package >>^/ net.caffeinemc.mods.sodium .client.gui.options.control.ControlElement;
+import /*$ sodium-package >>*/ net.caffeinemc.mods.sodium .client.gui.widgets.FlatButtonWidget;
+import /*$ sodium-package >>*/ net.caffeinemc.mods.sodium .client.gui.options.control.ControlElement;
 
 @Mixin(value = SodiumVideoOptionsScreen.class, remap = false)
 public abstract class SodiumVideoOptionsScreenMixin extends Screen implements ScreenProcessorProvider, SodiumScreenOperations {
@@ -73,7 +74,7 @@ public abstract class SodiumVideoOptionsScreenMixin extends Screen implements Sc
         return () -> {
             onSetTab.run();
             Minecraft.getInstance().
-                    /^? if >=1.21.2 {^/ schedule /^?} else {^/ /^tell ^//^?}^/(this::focusOnFirstControl);
+                    /*? if >=1.21.2 {*/ schedule /*?} else {*/ /*tell *//*?}*/(this::focusOnFirstControl);
         };
     }
 
@@ -96,20 +97,34 @@ public abstract class SodiumVideoOptionsScreenMixin extends Screen implements Sc
     public void controlify$nextPage() {
         var accessor = (TabFrameAccessor) this.tabFrame;
         List<Tab<?>> tabs = accessor.getTabs();
+        Optional<Tab<?>> selectedTab = getSelectedTab(accessor);
+        if (selectedTab.isEmpty()) return;
 
-        var currentIndex = tabs.indexOf(accessor.getSelectedTab());
+        var currentIndex = tabs.indexOf(selectedTab.get());
         var nextIndex = (currentIndex + 1) % tabs.size();
-        tabFrame.setTab(tabs.get(nextIndex));
+
+        //? sodium: >=0.6 {
+        tabFrame.setTab(Optional.of(tabs.get(nextIndex)));
+        //?} else {
+        /*tabFrame.setTab(tabs.get(nextIndex));
+        *///?}
     }
 
     @Override
     public void controlify$prevPage() {
         var accessor = (TabFrameAccessor) this.tabFrame;
         List<Tab<?>> tabs = accessor.getTabs();
+        Optional<Tab<?>> selectedTab = getSelectedTab(accessor);
+        if (selectedTab.isEmpty()) return;
 
-        var currentIndex = tabs.indexOf(accessor.getSelectedTab());
+        var currentIndex = tabs.indexOf(selectedTab.get());
         var nextIndex = (currentIndex - 1 + tabs.size()) % tabs.size();
-        tabFrame.setTab(tabs.get(nextIndex));
+
+        //? sodium: >=0.6 {
+        tabFrame.setTab(Optional.of(tabs.get(nextIndex)));
+        //?} else {
+        /*tabFrame.setTab(tabs.get(nextIndex));
+         *///?}
     }
 
     @Override
@@ -126,5 +141,14 @@ public abstract class SodiumVideoOptionsScreenMixin extends Screen implements Sc
     public FlatButtonWidget controlify$getUndoButton() {
         return undoButton;
     }
+
+    @Unique
+    private Optional<Tab<?>> getSelectedTab(TabFrameAccessor accessor) {
+        //? sodium: >=0.6 {
+        return accessor.getSelectedTab();
+        //?} else {
+        /*return Optional.ofNullable(accessor.getSelectedTab());
+        *///?}
+    }
 }
-*///?}
+//?}

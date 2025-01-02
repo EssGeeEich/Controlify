@@ -13,12 +13,10 @@ ${mod_description}
 '''
 logoFile = "icon.png"
 
-${mod_mixins}
-
 [["dependencies.${mod_id}"]]
 modId = "minecraft"
 mandatory = true
-versionRange = "${minecraft_version}"
+versionRange = "${mc}"
 ordering = "NONE"
 side = "BOTH"
 

@@ -27,12 +27,16 @@ stonecutter {
             }
         }
 
-        mc("1.21.4", loaders = listOf("fabric", "neoforge"))
-        mc("1.21.3", loaders = listOf("fabric", "neoforge"))
-        mc("1.21", loaders = listOf("fabric", "neoforge"))
-        mc("1.20.6", loaders = listOf("fabric", "neoforge"))
-        mc("1.20.4", loaders = listOf("fabric"/*, "neoforge"*/))
-        mc("1.20.1", loaders = listOf("fabric"))
+        val fabric = "fabric"
+        val neoforge = "neoforge"
+        val forge = "forge"
+
+        mc("1.21.4", loaders = listOf(fabric, neoforge))
+        mc("1.21.3", loaders = listOf(fabric, neoforge))
+        mc("1.21", loaders = listOf(fabric, neoforge))
+        mc("1.20.6", loaders = listOf(fabric, neoforge))
+        mc("1.20.4", loaders = listOf(fabric, neoforge))
+        mc("1.20.1", loaders = listOf(fabric))
 
         vcsVersion = "1.21.4-fabric"
     }

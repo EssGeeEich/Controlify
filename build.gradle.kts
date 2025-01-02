@@ -1,18 +1,9 @@
-import net.fabricmc.loom.task.RemapJarTask
-import org.gradle.configurationcache.extensions.capitalized
-
 plugins {
-    val modstitchVersion = "0.3.0"
-    id("dev.isxander.modstitch.base") version modstitchVersion
-    id("dev.isxander.modstitch.publishing") version modstitchVersion
+    val modstitch = "0.4.0"
+    id("dev.isxander.modstitch.base") version modstitch
+    id("dev.isxander.modstitch.publishing") version modstitch
 
-    id("dev.kikugie.j52j") version "1.0.2"
-}
-
-fun prop(name: String, required: Boolean = false, consumer: (prop: String) -> Unit) {
-    (findProperty(name) as? String?)
-        ?.let(consumer)
-        ?: if (required) error("Property $name is required") else null
+    id("dev.kikugie.j52j") version "1.0.3"
 }
 
 // version stuff
@@ -37,12 +28,21 @@ modstitch {
     minecraftVersion = mcVersion
     javaTarget = 17
 
+    parchment {
+        prop("parchment.version") { mappingsVersion = it }
+        prop("parchment.minecraft") { minecraftVersion = it }
+    }
+
     metadata {
+        fun prop(property: String, block: (String) -> Unit) {
+            prop(property, ifNull = {""}) { block(it) }
+        }
+
         modId = "controlify"
         modName = "Controlify"
         modVersion = "$versionWithoutMC+${stonecutter.current.project}"
         modGroup = "dev.isxander"
-        modLicense = "LGPL-3.0"
+        modLicense = "LGPL-3.0-or-later"
         modAuthor = "isXander"
         prop("modDescription") { modDescription = it }
 
@@ -50,7 +50,7 @@ modstitch {
         prop("githubProject") { replacementProperties.put("github", it) }
         prop("meta.mcDep") { replacementProperties.put("mc", it) }
         prop("meta.loaderDep") { replacementProperties.put("loaderVersion", it) }
-        prop("meta.fapiDep") { replacementProperties.put("fapi", it) }
+        prop("deps.fabricApi") { replacementProperties.put("fapi", it) }
 
 
         if (isNeoforge && stonecutter.eval(stonecutter.current.version, "<=1.20.4")) {
@@ -73,17 +73,21 @@ modstitch {
                     vmArgs("-Dsodium.checks.issue2561=false")
                 }
             }
-
-            // MixinExtras expressions do not support tiny remapper for now.
-            mixin.useLegacyMixinAp.set(true)
         }
     }
 
     moddevgradle {
-        prop("deps.forge", required = true) { forgeVersion = it }
+        enable {
+            prop("deps.neoForge") { neoForgeVersion = it }
+            prop("deps.forge") { forgeVersion = it }
+        }
+
+        defaultRuns(server = false)
     }
 
     mixin {
+        addMixinsToModManifest = true
+
         configs.register("controlify")
         if (isPropDefined("deps.iris")) configs.register("controlify-compat.iris")
         if (isPropDefined("deps.sodium")) configs.register("controlify-compat.sodium")
@@ -114,7 +118,6 @@ stonecutter {
 }
 
 repositories {
-    mavenCentral()
     maven("https://maven.terraformersmc.com")
     maven("https://maven.isxander.dev/releases")
     maven("https://maven.isxander.dev/snapshots")
@@ -124,21 +127,21 @@ repositories {
 dependencies {
     fun Dependency?.jij() = this?.also(::modstitchJiJ)
 
-    optionalProp("deps.mixinExtras") {
+    prop("deps.mixinExtras") {
         if (isForgeLike) {
-            compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:$it")!!)
+            modstitchCompileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:$it")!!)
             if (isNeoforge) {
-                implementation("io.github.llamalad7:mixinextras-neoforge:$it").jij()
+                modstitchImplementation("io.github.llamalad7:mixinextras-neoforge:$it").jij()
             } else {
-                implementation("io.github.llamalad7:mixinextras-forge:$it").jij()
+                modstitchImplementation("io.github.llamalad7:mixinextras-forge:$it").jij()
             }
         } else {
-            implementation(annotationProcessor("io.github.llamalad7:mixinextras-fabric:$it")!!).jij()
+            modstitchImplementation(annotationProcessor("io.github.llamalad7:mixinextras-fabric:$it")!!).jij()
         }
     }
 
     fun modDependency(id: String, artifactGetter: (String) -> String, extra: (Boolean) -> Unit = {}) {
-        optionalProp("deps.$id") {
+        prop("deps.$id") {
             val noRuntime = findProperty("deps.$id.noRuntime")?.toString()?.toBoolean() == true
             val configuration = if (noRuntime) "modstitchModCompileOnly" else "modstitchModImplementation"
 
@@ -173,14 +176,8 @@ dependencies {
     modstitchApi("org.hid4java:hid4java:${property("deps.hid4java")}")
         .jij()
 
-    // A json5 reader that hooks into gson
-    listOf(
-        "json",
-        "gson",
-    ).forEach {
-        modstitchApi("org.quiltmc.parsers:$it:${property("deps.quiltParsers")}")
-            .jij()
-    }
+    // A json5 reader
+    modstitchApi("org.quiltmc.parsers:json:${property("deps.quiltParsers")}").jij()
 
     // sodium compat
     modDependency("sodium", { "maven.modrinth:sodium:$it" })
@@ -221,7 +218,7 @@ tasks {
     }
 
     register("releaseModVersion") {
-        group = "mod"
+        group = "controlify"
 
         dependsOn("publishMods")
 
@@ -232,15 +229,15 @@ tasks {
 }
 
 val offlineJar by tasks.registering(Jar::class) {
-    group = "offline"
+    group = "controlify/internal"
 
     // ensure the input jar is built
     val inputJar = when {
-        modstitch.isLoom -> tasks.named<Jar>("remapJar")
-        modstitch.isModDevGradleRegular -> tasks.jar
-        modstitch.isModDevGradleLegacy -> tasks.named<Jar>("reobfJar")
+        modstitch.isLoom -> "remapJar"
+        modstitch.isModDevGradleRegular -> "jar"
+        modstitch.isModDevGradleLegacy -> "reobfJar"
         else -> error("Unknown loader")
-    }
+    }.let { tasks.named<AbstractArchiveTask>(it) }
     dependsOn(inputJar)
 
     // ensure the natives are downloaded
@@ -283,7 +280,7 @@ msPublishing {
                 minecraftVersions.addAll(stableMCVersions)
                 minecraftVersions.addAll(versionList("pub.modrinthMC"))
 
-                announcementTitle = "Download $mcVersion for ${loader.capitalized()} from Modrinth"
+                announcementTitle = "Download $mcVersion for ${loader.replaceFirstChar { it.uppercase() }} from Modrinth"
 
                 requires { slug.set("yacl") }
 
@@ -303,7 +300,7 @@ msPublishing {
                 minecraftVersions.addAll(stableMCVersions)
                 minecraftVersions.addAll(versionList("pub.curseMC"))
 
-                announcementTitle = "Download $mcVersion for ${loader.capitalized()} from CurseForge"
+                announcementTitle = "Download $mcVersion for ${loader.replaceFirstChar { it.uppercase() }} from CurseForge"
 
                 requires { slug.set("yacl") }
 
@@ -327,8 +324,8 @@ msPublishing {
 
     maven {
         repositories {
-            val username = "XANDER_MAVEN_USER".let { System.getenv(it) ?: findProperty(it) }?.toString()
-            val password = "XANDER_MAVEN_PASS".let { System.getenv(it) ?: findProperty(it) }?.toString()
+            val username = prop("XANDER_MAVEN_USER") { it }
+            val password = prop("XANDER_MAVEN_PASS") { it }
             if (username != null && password != null) {
                 maven(url = "https://maven.isxander.dev/releases") {
                     name = "XanderReleases"
@@ -338,16 +335,21 @@ msPublishing {
                     }
                 }
             } else {
-                println("Xander Maven credentials not satisfied.")
+                logger.warn("Xander Maven credentials not satisfied.")
             }
         }
     }
 }
 
-fun <T> optionalProp(property: String, block: (String) -> T?) {
-    findProperty(property)?.toString()?.takeUnless { it.isBlank() }?.let(block)
+fun <T> prop(property: String, required: Boolean = false, ifNull: () -> String? = { null }, block: (String) -> T?): T? {
+    return ((System.getenv(property) ?: findProperty(property)?.toString())
+        ?.takeUnless { it.isBlank() }
+        ?: ifNull())
+        .let { if (required && it == null) error("Property $property is required") else it }
+        ?.let(block)
 }
 
 fun isPropDefined(property: String): Boolean {
-    return findProperty(property)?.toString()?.isNotBlank() ?: false
+    return (System.getenv(property) ?: findProperty(property)?.toString())
+        ?.isNotBlank() == true
 }

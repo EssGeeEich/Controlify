@@ -7,21 +7,22 @@ plugins {
     id("de.undercouch.download") version "5.6.0"
 }
 stonecutter active "1.21.4-fabric" /* [SC] DO NOT EDIT */
-stonecutter.debug = true // stonecutter has a caching issue right now
 
-stonecutter registerChiseled tasks.register("buildAllVersions", stonecutter.chiseled) {
-    group = "mod"
+val chiseledBuild by tasks.registering(stonecutter.chiseled.kotlin) {
+    group = "controlify"
     ofTask("build")
 }
+stonecutter registerChiseled chiseledBuild
 
-stonecutter registerChiseled tasks.register("releaseAllVersions", stonecutter.chiseled) {
-    group = "mod"
+val chiseledReleaseModVersion by tasks.registering(stonecutter.chiseled.kotlin) {
+    group = "controlify/internal"
     ofTask("releaseModVersion")
 }
+stonecutter registerChiseled chiseledReleaseModVersion
 
 val releaseMod by tasks.registering {
-    group = "mod"
-    dependsOn("releaseAllVersions")
+    group = "controlify"
+    dependsOn(chiseledReleaseModVersion)
     dependsOn("publishMods")
 }
 
@@ -58,7 +59,7 @@ listOf(
     NativesDownload("macos-universal", "dylib", "darwin-x86-64", "MacIntel"),
 ).map {
     tasks.register("download${it.taskName}", Download::class) {
-        group = "natives"
+        group = "controlify/natives"
 
         src("https://maven.isxander.dev/releases/dev/isxander/libsdl4j-natives/$sdl3Target/libsdl4j-natives-$sdl3Target-${it.mavenSuffix}.${it.extension}")
         dest("${layout.buildDirectory.get()}/sdl-natives/${sdl3Target}/${it.jnaCanonicalPrefix}/libSDL3.${it.extension}")
@@ -66,7 +67,7 @@ listOf(
     }
 }.let { downloadTasks ->
     tasks.register("downloadOfflineNatives") {
-        group = "natives"
+        group = "controlify/natives"
 
         downloadTasks.forEach(::dependsOn)
 
@@ -78,7 +79,7 @@ listOf(
 val downloadHidDb by tasks.registering(Download::class) {
     finalizedBy("convertHidDBToSDL3")
 
-    group = "mod"
+    group = "controlify/internal"
 
     src("https://raw.githubusercontent.com/gabomdq/SDL_GameControllerDB/master/gamecontrollerdb.txt")
     dest("src/main/resources/assets/controlify/controllers/gamecontrollerdb-sdl2.txt")
@@ -89,7 +90,7 @@ val convertHidDBToSDL3 by tasks.registering(Copy::class) {
     mustRunAfter(downloadHidDb)
     dependsOn(downloadHidDb)
 
-    group = "mod"
+    group = "controlify"
 
     val file = downloadHidDb.get().outputs.files.singleFile
     from(file)
