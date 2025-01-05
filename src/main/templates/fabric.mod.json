@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "id": "${id}",
-  "version": "${version}",
-  "name": "${name}",
-  "description": "${description}",
+  "id": "${mod_id}",
+  "version": "${mod_version}",
+  "name": "${mod_name}",
+  "description": "${mod_description}",
   "authors": [
-    "isXander"
+    "${mod_author}"
   ],
   "contact": {
     "homepage": "https://isxander.dev",
@@ -31,9 +31,6 @@
       "dev.isxander.controlify.ControlifyBootstrap"
     ]
   },
-  "mixins": [
-    "${mixins}"
-  ],
   "icon": "icon.png",
   "depends": {
     "fabricloader": ">=0.15.0",

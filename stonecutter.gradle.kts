@@ -1,41 +1,42 @@
 import de.undercouch.gradle.tasks.download.Download
+import dev.kikugie.stonecutter.ChiseledTask
 
 plugins {
-    id("dev.architectury.loom") version "1.7.414+" apply false
     id("me.modmuss50.mod-publish-plugin") version "0.6.1+"
     id("org.ajoberstar.grgit") version "5.0.+"
     id("dev.kikugie.stonecutter")
     id("de.undercouch.download") version "5.6.0"
 }
 stonecutter active "1.21.4-fabric" /* [SC] DO NOT EDIT */
-stonecutter.debug = true // stonecutter has a caching issue right now
 
-stonecutter registerChiseled tasks.register("buildAllVersions", stonecutter.chiseled) {
-    group = "mod"
-    ofTask("build")
+fun registerChiseled(task: String, action: ChiseledTask.() -> Unit = {}): TaskProvider<ChiseledTask> {
+    return tasks.register(
+        "chiseled" + task.replaceFirstChar { it.uppercase() },
+        stonecutter.chiseled.kotlin
+    ) {
+        group = "controlify"
+        ofTask(task)
+        action(this)
+
+    }.also { stonecutter registerChiseled it }
 }
 
-stonecutter registerChiseled tasks.register("releaseAllVersions", stonecutter.chiseled) {
-    group = "mod"
-    ofTask("releaseModVersion")
+val chiseledBuildAndCollect = registerChiseled("buildAndCollect")
+val chiseledReleaseModVersion = registerChiseled("releaseModVersion") {
+    mustRunAfter(chiseledBuildAndCollect)
 }
 
 val releaseMod by tasks.registering {
-    group = "mod"
-    dependsOn("releaseAllVersions")
+    group = "controlify"
+    dependsOn(chiseledBuildAndCollect)
+    dependsOn(chiseledReleaseModVersion)
     dependsOn("publishMods")
 }
 
 stonecutter.parameters {
-    val platform = node!!.property("loom.platform")
-
     fun String.propDefined() = node!!.findProperty(this)?.toString()?.isNotBlank() ?: false
     consts(
         listOf(
-            "fabric" to (platform == "fabric"),
-            "forge" to (platform == "forge"),
-            "neoforge" to (platform == "neoforge"),
-            "forgelike" to (platform == "forge" || platform == "neoforge"),
             "immediately-fast" to "deps.immediatelyFast".propDefined(),
             "iris" to "deps.iris".propDefined(),
             "mod-menu" to "deps.modMenu".propDefined(),
@@ -47,26 +48,6 @@ stonecutter.parameters {
     )
 }
 
-subprojects {
-    repositories {
-        mavenCentral()
-        maven("https://maven.terraformersmc.com")
-        maven("https://maven.isxander.dev/releases")
-        maven("https://maven.isxander.dev/snapshots")
-        maven("https://maven.parchmentmc.org")
-        maven("https://maven.quiltmc.org/repository/release")
-        exclusiveContent {
-            forRepository { maven("https://api.modrinth.com/maven") }
-            filter { includeGroup("maven.modrinth") }
-        }
-        exclusiveContent {
-            forRepository { maven("https://cursemaven.com") }
-            filter { includeGroup("curse.maven") }
-        }
-        maven("https://maven.neoforged.net/releases/")
-    }
-}
-
 val sdl3Target = property("deps.sdl3Target")!!.toString()
 
 data class NativesDownload(
@@ -76,7 +57,7 @@ data class NativesDownload(
     val taskName: String
 )
 
-val downloadNativesTasks = listOf(
+listOf(
     NativesDownload("windows-x86_64", "dll", "win32-x86-64", "WinX86_64"),
     NativesDownload("windows-x86", "dll", "win32-x86", "WinX86"),
     NativesDownload("linux-x86_64", "so", "linux-x86-64", "LinuxX86_64"),
@@ -85,7 +66,7 @@ val downloadNativesTasks = listOf(
     NativesDownload("macos-universal", "dylib", "darwin-x86-64", "MacIntel"),
 ).map {
     tasks.register("download${it.taskName}", Download::class) {
-        group = "natives"
+        group = "controlify/natives"
 
         src("https://maven.isxander.dev/releases/dev/isxander/libsdl4j-natives/$sdl3Target/libsdl4j-natives-$sdl3Target-${it.mavenSuffix}.${it.extension}")
         dest("${layout.buildDirectory.get()}/sdl-natives/${sdl3Target}/${it.jnaCanonicalPrefix}/libSDL3.${it.extension}")
@@ -93,7 +74,7 @@ val downloadNativesTasks = listOf(
     }
 }.let { downloadTasks ->
     tasks.register("downloadOfflineNatives") {
-        group = "natives"
+        group = "controlify/natives"
 
         downloadTasks.forEach(::dependsOn)
 
@@ -105,7 +86,7 @@ val downloadNativesTasks = listOf(
 val downloadHidDb by tasks.registering(Download::class) {
     finalizedBy("convertHidDBToSDL3")
 
-    group = "mod"
+    group = "controlify"
 
     src("https://raw.githubusercontent.com/gabomdq/SDL_GameControllerDB/master/gamecontrollerdb.txt")
     dest("src/main/resources/assets/controlify/controllers/gamecontrollerdb-sdl2.txt")
@@ -116,7 +97,7 @@ val convertHidDBToSDL3 by tasks.registering(Copy::class) {
     mustRunAfter(downloadHidDb)
     dependsOn(downloadHidDb)
 
-    group = "mod"
+    group = "controlify/internal"
 
     val file = downloadHidDb.get().outputs.files.singleFile
     from(file)
@@ -196,7 +177,4 @@ publishMods {
             announcementTitle = "Download from GitHub"
         }
     }
-}
-tasks.named("publishMods") {
-    dependsOn("releaseAllVersions")
 }

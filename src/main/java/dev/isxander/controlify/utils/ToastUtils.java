@@ -11,7 +11,7 @@ public class ToastUtils {
                 /*? if >=1.20.4 {*/
                 longer ? SystemToast.SystemToastId.UNSECURE_SERVER_WARNING : SystemToast.SystemToastId.PERIODIC_NOTIFICATION,
                 /*?} else {*/
-                /*longer ? SystemToastIds.UNSECURE_SERVER_WARNING : SystemToastIds.PERIODIC_NOTIFICATION,
+                /*longer ? SystemToast.SystemToastIds.UNSECURE_SERVER_WARNING : SystemToast.SystemToastIds.PERIODIC_NOTIFICATION,
                 *//*?}*/
                 title,
                 message

@@ -7,6 +7,7 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 
 @Mixin(AbstractSelectionList.class)
 public interface AbstractSelectionListAccessor {
+    //? if >1.20.4 {
     @Accessor("MENU_LIST_BACKGROUND")
     static ResourceLocation getMenuListBackground() {
         throw new AssertionError();
@@ -16,4 +17,5 @@ public interface AbstractSelectionListAccessor {
     static ResourceLocation getInWorldMenuListBackground() {
         throw new AssertionError();
     }
+    //?}
 }

@@ -2,7 +2,7 @@
   "package": "dev.isxander.controlify.mixins",
   "required": true,
   "minVersion": "0.8",
-  "minMixinExtrasVersion": "0.5.0-beta.1",
+  "minMixinExtrasVersion": "0.5.0-beta.4",
   "injectors": {
     "defaultRequire": 1
   },
@@ -27,7 +27,6 @@
     "feature.guide.screen.AbstractContainerScreenAccessor",
     "feature.guide.screen.AbstractWidgetMixin",
     "feature.guide.screen.TabNavigationBarMixin",
-    "feature.hdhaptics.JOrbisAudioStreamMixin",
     "feature.hdhaptics.SoundBufferAccessor",
     "feature.hdhaptics.SoundEngineAccessor",
     "feature.hdhaptics.SoundManagerAccessor",
@@ -100,9 +99,7 @@
     "feature.virtualmouse.snapping.CreativeModeInventoryScreenMixin",
     "feature.virtualmouse.snapping.RecipeBookComponentAccessor",
     "feature.virtualmouse.snapping.RecipeBookPageAccessor",
-    "feature.virtualmouse.snapping.ScreenMixin"
-  ],
-  "mixins": [
+    "feature.virtualmouse.snapping.ScreenMixin",
     "feature.font.TranslatableContentsMixin",
     "feature.guide.ingame.PlayerAccessor"
   ]
