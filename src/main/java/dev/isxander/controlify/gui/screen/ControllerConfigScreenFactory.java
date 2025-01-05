@@ -189,6 +189,14 @@ public class ControllerConfigScreenFactory {
                                 .onOffFormatter())
                         .build())
                 .option(Option.<Boolean>createBuilder()
+                        .name(Component.translatable("controlify.gui.invert_vertical_look"))
+                        .description(OptionDescription.createBuilder()
+                                .text(Component.translatable("controlify.gui.invert_vertical_look.tooltip"))
+                                .build())
+                        .binding(def.vLookInvert, () -> config.vLookInvert, v -> config.vLookInvert = v)
+                        .controller(TickBoxControllerBuilder::create)
+                        .build())
+                .option(Option.<Boolean>createBuilder()
                         .name(Component.translatable("controlify.gui.no_fly_drifting"))
                         .description(OptionDescription.createBuilder()
                                 .text(Component.translatable("controlify.gui.no_fly_drifting.tooltip"))
@@ -318,7 +326,7 @@ public class ControllerConfigScreenFactory {
 
     private ConfigCategory createAdvancedCategory(ControllerEntity controller) {
         Optional<InputComponent> input = controller.input();
-        
+
         ConfigCategory.Builder builder = ConfigCategory.createBuilder()
                 .name(Component.translatable("controlify.config.category.advanced"));
 

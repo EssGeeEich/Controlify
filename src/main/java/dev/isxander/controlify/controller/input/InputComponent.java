@@ -64,7 +64,7 @@ public class InputComponent implements ECSComponent, ConfigHolder<InputComponent
     public ControllerStateView stateThen() {
         return this.deadzoneStateThen;
     }
-    
+
     public ControllerState rawStateNow() {
         return this.stateNow;
     }
