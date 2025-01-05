@@ -65,6 +65,8 @@
   "controlify.gui.vertical_look_sensitivity.tooltip": "Milyen gyorsan mozog a kamera függőlegesen mikor körbenézel.",
   "controlify.gui.vmouse_sensitivity": "Virtuális Egér Érzékenysége",
   "controlify.gui.vmouse_sensitivity.tooltip": "Milyen gyorsan mozog a virtuális egér.",
+  "controlify.gui.invert_vertical_look": "Függőleges Nézés Megfordítása",
+  "controlify.gui.invert_vertical_look.tooltip": "Megfordítja a függőleges nézési tengelyt. Pl. a fel le lesz és fordítva.",
   "controlify.gui.reduce_aiming_sensitivity": "Célzási Érzékenység Csökkentése",
   "controlify.gui.reduce_aiming_sensitivity.tooltip": "Csökkenti az érzékenységet célzásnál.",
   "controlify.gui.config.group.controls": "Irányítás",
