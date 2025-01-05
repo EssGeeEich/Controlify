@@ -65,6 +65,8 @@
   "controlify.gui.vertical_look_sensitivity.tooltip": "環顧四周時，相機垂直移動的速度。",
   "controlify.gui.vmouse_sensitivity": "虛擬滑鼠靈敏度",
   "controlify.gui.vmouse_sensitivity.tooltip": "虛擬滑鼠移動速度。",
+  "controlify.gui.invert_vertical_look": "Invert Look Y-Axis",
+  "controlify.gui.invert_vertical_look.tooltip": "Inverts the look y-axis. e.g. up becomes down and vice versa.",
   "controlify.gui.reduce_aiming_sensitivity": "降低瞄準靈敏度",
   "controlify.gui.reduce_aiming_sensitivity.tooltip": "瞄準時降低靈敏度。",
   "controlify.gui.config.group.controls": "控制",
