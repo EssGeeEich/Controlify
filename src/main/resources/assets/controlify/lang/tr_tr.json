@@ -65,6 +65,8 @@
   "controlify.gui.vertical_look_sensitivity.tooltip": "Etrafa bakarken kameranın dikey olarak ne kadar hızlı hareket ettiği.",
   "controlify.gui.vmouse_sensitivity": "Sanal Fare Hassasiyeti",
   "controlify.gui.vmouse_sensitivity.tooltip": "Sanal farenin ne kadar hızlı hareket ettiği.",
+  "controlify.gui.invert_vertical_look": "Invert Look Y-Axis",
+  "controlify.gui.invert_vertical_look.tooltip": "Inverts the look y-axis. e.g. up becomes down and vice versa.",
   "controlify.gui.reduce_aiming_sensitivity": "Hedefleme Hassasiyetini Azalt",
   "controlify.gui.reduce_aiming_sensitivity.tooltip": "Nişan alırken hassasiyeti azalt.",
   "controlify.gui.config.group.controls": "Kontroller",
