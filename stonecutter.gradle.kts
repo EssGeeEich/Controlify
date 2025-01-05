@@ -1,4 +1,5 @@
 import de.undercouch.gradle.tasks.download.Download
+import dev.kikugie.stonecutter.ChiseledTask
 
 plugins {
     id("me.modmuss50.mod-publish-plugin") version "0.6.1+"
@@ -8,20 +9,26 @@ plugins {
 }
 stonecutter active "1.21.4-fabric" /* [SC] DO NOT EDIT */
 
-val chiseledBuild by tasks.registering(stonecutter.chiseled.kotlin) {
-    group = "controlify"
-    ofTask("build")
-}
-stonecutter registerChiseled chiseledBuild
+fun registerChiseled(task: String, action: ChiseledTask.() -> Unit = {}): TaskProvider<ChiseledTask> {
+    return tasks.register(
+        "chiseled" + task.replaceFirstChar { it.uppercase() },
+        stonecutter.chiseled.kotlin
+    ) {
+        group = "controlify"
+        ofTask(task)
+        action(this)
 
-val chiseledReleaseModVersion by tasks.registering(stonecutter.chiseled.kotlin) {
-    group = "controlify/internal"
-    ofTask("releaseModVersion")
+    }.also { stonecutter registerChiseled it }
 }
-stonecutter registerChiseled chiseledReleaseModVersion
+
+val chiseledBuildAndCollect = registerChiseled("buildAndCollect")
+val chiseledReleaseModVersion = registerChiseled("releaseModVersion") {
+    mustRunAfter(chiseledBuildAndCollect)
+}
 
 val releaseMod by tasks.registering {
     group = "controlify"
+    dependsOn(chiseledBuildAndCollect)
     dependsOn(chiseledReleaseModVersion)
     dependsOn("publishMods")
 }
@@ -79,7 +86,7 @@ listOf(
 val downloadHidDb by tasks.registering(Download::class) {
     finalizedBy("convertHidDBToSDL3")
 
-    group = "controlify/internal"
+    group = "controlify"
 
     src("https://raw.githubusercontent.com/gabomdq/SDL_GameControllerDB/master/gamecontrollerdb.txt")
     dest("src/main/resources/assets/controlify/controllers/gamecontrollerdb-sdl2.txt")
@@ -90,7 +97,7 @@ val convertHidDBToSDL3 by tasks.registering(Copy::class) {
     mustRunAfter(downloadHidDb)
     dependsOn(downloadHidDb)
 
-    group = "controlify"
+    group = "controlify/internal"
 
     val file = downloadHidDb.get().outputs.files.singleFile
     from(file)
@@ -170,7 +177,4 @@ publishMods {
             announcementTitle = "Download from GitHub"
         }
     }
-}
-tasks.named("publishMods") {
-    dependsOn("releaseAllVersions")
 }

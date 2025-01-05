@@ -21,19 +21,31 @@ public class MouseHandlerMixin implements MouseMinecraftCallNotifier {
     @Unique private boolean controlify$calledFromMinecraftSetScreen = false;
 
     // method_22686 is lambda for GLFW mouse click hook - do it outside of the `onPress` method due to fake inputs
-    @Inject(method = {"method_22686", "lambda$setup$4"}, at = @At(value = "INVOKE", target = "Lnet/minecraft/client/MouseHandler;onPress(JIII)V"))
+    @SuppressWarnings({"MixinAnnotationTarget", "UnresolvedMixinReference", "InvalidInjectorMethodSignature"})
+    @Inject(
+            method = {"method_22686", "/lambda\\$setup\\$\\d+/"},
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/MouseHandler;onPress(JIII)V")
+    )
     private void onMouseClickInput(long window, int button, int action, int modifiers, CallbackInfo ci) {
         onMouse(window);
     }
 
     // method_22689 is lambda for GLFW mouse move hook - do it outside of the `onMove` method due to fake inputs
-    @Inject(method = {"method_22689", "lambda$setup$2"}, at = @At(value = "INVOKE", target = "Lnet/minecraft/client/MouseHandler;onMove(JDD)V"))
+    @SuppressWarnings({"MixinAnnotationTarget", "UnresolvedMixinReference", "InvalidInjectorMethodSignature"})
+    @Inject(
+            method = {"method_22689", "/lambda\\$setup\\$\\d+/"},
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/MouseHandler;onMove(JDD)V")
+    )
     private void onMouseMoveInput(long window, double x, double y, CallbackInfo ci) {
         onMouse(window);
     }
 
     // method_22687 is lambda for GLFW mouse scroll hook - do it outside of the `onScroll` method due to fake inputs
-    @Inject(method = {"method_22687", "lambda$setup$6"}, at = @At(value = "INVOKE", target = "Lnet/minecraft/client/MouseHandler;onScroll(JDD)V"))
+    @SuppressWarnings({"MixinAnnotationTarget", "UnresolvedMixinReference", "InvalidInjectorMethodSignature"})
+    @Inject(
+            method = {"method_22687", "/lambda\\$setup\\$\\d+/"},
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/MouseHandler;onScroll(JDD)V")
+    )
     private void onMouseScrollInput(long window, double scrollDeltaX, double scrollDeltaY, CallbackInfo ci) {
         onMouse(window);
     }
@@ -52,7 +64,10 @@ public class MouseHandlerMixin implements MouseMinecraftCallNotifier {
     /**
      * Without this, mouse is left in the center of the screen that conflicts with controller focus.
      */
-    @Inject(method = "releaseMouse", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/platform/InputConstants;grabOrReleaseMouse(JIDD)V"))
+    @Inject(
+            method = "releaseMouse",
+            at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/platform/InputConstants;grabOrReleaseMouse(JIDD)V")
+    )
     private void moveMouseIfNecessary(CallbackInfo ci) {
         if (!controlify$calledFromMinecraftSetScreen && ControlifyApi.get().currentInputMode().isController()) {
             Controlify.instance().hideMouse(true, true);

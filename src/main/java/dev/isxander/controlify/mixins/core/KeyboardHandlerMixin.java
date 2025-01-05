@@ -16,14 +16,22 @@ public class KeyboardHandlerMixin {
     @Shadow @Final private Minecraft minecraft;
 
     // method_22678 is lambda for GLFW keypress hook - do it outside of the `keyPress` method due to fake inputs
-    @Inject(method = {"method_22678", "lambda$setup$8"}, at = @At(value = "INVOKE", target = "Lnet/minecraft/client/KeyboardHandler;keyPress(JIIII)V"))
+    @SuppressWarnings({"MixinAnnotationTarget", "InvalidInjectorMethodSignature", "UnresolvedMixinReference"})
+    @Inject(
+            method = {"method_22678", "/lambda\\$setup\\$\\d+/"},
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/KeyboardHandler;keyPress(JIIII)V")
+    )
     private void onKeyboardInput(long window, int i, int j, int k, int m, CallbackInfo ci) {
         if (window == minecraft.getWindow().getWindow() && Controlify.instance().currentInputMode() != InputMode.MIXED)
             Controlify.instance().setInputMode(InputMode.KEYBOARD_MOUSE);
     }
 
     // method_22677 is lambda for GLFW char input hook - do it outside of the `charTyped` method due to fake inputs
-    @Inject(method = {"method_22677", "lambda$setup$10"}, at = @At(value = "INVOKE", target = "Lnet/minecraft/client/KeyboardHandler;charTyped(JII)V"))
+    @SuppressWarnings({"MixinAnnotationTarget", "InvalidInjectorMethodSignature", "UnresolvedMixinReference"})
+    @Inject(
+            method = {"method_22677", "/lambda\\$setup\\$\\d+/"},
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/KeyboardHandler;charTyped(JII)V")
+    )
     private void onCharInput(long window, int codePoint, int modifiers, CallbackInfo ci) {
         if (window == minecraft.getWindow().getWindow() && Controlify.instance().currentInputMode() != InputMode.MIXED)
             Controlify.instance().setInputMode(InputMode.KEYBOARD_MOUSE);

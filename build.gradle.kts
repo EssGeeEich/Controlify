@@ -26,7 +26,7 @@ val versionWithoutMC = property("modVersion")!!.toString()
 
 modstitch {
     minecraftVersion = mcVersion
-    javaTarget = 17
+    javaTarget = 17 // lowest common denominator
 
     parchment {
         prop("parchment.version") { mappingsVersion = it }
@@ -62,16 +62,8 @@ modstitch {
         prop("deps.fabricLoader", required = true) { fabricLoaderVersion = it }
 
         configureLoom {
-            if (stonecutter.current.isActive) { // only generate active project run config as the rest would be invalid
-                runConfigs.all {
-                    ideConfigGenerated(true)
-
-                    // use a single run directory for all targets (targets are two folders deep from root)
-                    runDir("../../run")
-
-                    // Loom messes with LWJGL version. It's not the one that ships with MC and Sodium doesn't like it
-                    vmArgs("-Dsodium.checks.issue2561=false")
-                }
+            runConfigs.all {
+                ideConfigGenerated(false)
             }
         }
     }
@@ -83,6 +75,11 @@ modstitch {
         }
 
         defaultRuns(server = false)
+        configureNeoforge {
+            runs.all {
+                disableIdeRun()
+            }
+        }
     }
 
     mixin {
@@ -99,6 +96,8 @@ modstitch {
     }
 }
 
+createActiveTask(tasks.named("runClient"))
+
 stonecutter {
     consts(
         "fabric" to modstitch.isLoom,
@@ -113,6 +112,7 @@ stonecutter {
         "sodium" to sodiumSemver
     )
 
+    // sodium repackaged in 0.6
     swaps["sodium-package"] = if (eval(sodiumSemver, ">=0.6"))
         "net.caffeinemc.mods.sodium" else "me.jellysquid.mods.sodium"
 }
@@ -128,15 +128,11 @@ dependencies {
     fun Dependency?.jij() = this?.also(::modstitchJiJ)
 
     prop("deps.mixinExtras") {
-        if (isForgeLike) {
-            modstitchCompileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:$it")!!)
-            if (isNeoforge) {
-                modstitchImplementation("io.github.llamalad7:mixinextras-neoforge:$it").jij()
-            } else {
-                modstitchImplementation("io.github.llamalad7:mixinextras-forge:$it").jij()
-            }
-        } else {
-            modstitchImplementation(annotationProcessor("io.github.llamalad7:mixinextras-fabric:$it")!!).jij()
+        when {
+            isFabric -> modstitchImplementation(annotationProcessor("io.github.llamalad7:mixinextras-fabric:$it")!!).jij()
+            isNeoforge -> implementation("io.github.llamalad7:mixinextras-neoforge:$it").jij()
+            isForge -> implementation("io.github.llamalad7:mixinextras-forge:$it").jij()
+            else -> error("Unknown loader")
         }
     }
 
@@ -177,7 +173,7 @@ dependencies {
         .jij()
 
     // A json5 reader
-    modstitchApi("org.quiltmc.parsers:json:${property("deps.quiltParsers")}").jij()
+    api("org.quiltmc.parsers:json:${property("deps.quiltParsers")}").jij()
 
     // sodium compat
     modDependency("sodium", { "maven.modrinth:sodium:$it" })
@@ -207,37 +203,37 @@ dependencies {
     modDependency("fancyMenu", { "maven.modrinth:fancymenu:$it" })
 }
 
-tasks {
-    generateModMetadata {
-        eachFile {
-            // don't include photoshop files for the textures for development
-            if (name.endsWith(".psd")) {
-                exclude()
-            }
-        }
-    }
-
-    register("releaseModVersion") {
-        group = "controlify"
-
-        dependsOn("publishMods")
-
-        if (!project.publishMods.dryRun.get()) {
-            dependsOn("publish")
+tasks.generateModMetadata {
+    eachFile {
+        // don't include photoshop files for the textures for development
+        if (name.endsWith(".psd")) {
+            exclude()
         }
     }
 }
 
+val releaseModVersion by tasks.registering {
+    group = "controlify/versioned"
+
+    dependsOn("publishMods")
+
+    if (!project.publishMods.dryRun.get()) {
+        dependsOn("publish")
+    }
+}
+
+val platformOutputJar = when {
+    modstitch.isLoom -> "remapJar"
+    modstitch.isModDevGradleRegular -> "jar"
+    modstitch.isModDevGradleLegacy -> "reobfJar"
+    else -> error("Unknown loader")
+}.let { tasks.named<AbstractArchiveTask>(it) }
+
 val offlineJar by tasks.registering(Jar::class) {
-    group = "controlify/internal"
+    group = "controlify/versioned/internal"
 
     // ensure the input jar is built
-    val inputJar = when {
-        modstitch.isLoom -> "remapJar"
-        modstitch.isModDevGradleRegular -> "jar"
-        modstitch.isModDevGradleLegacy -> "reobfJar"
-        else -> error("Unknown loader")
-    }.let { tasks.named<AbstractArchiveTask>(it) }
+    val inputJar = platformOutputJar
     dependsOn(inputJar)
 
     // ensure the natives are downloaded
@@ -255,11 +251,31 @@ val offlineJar by tasks.registering(Jar::class) {
 }
 tasks.build { dependsOn(offlineJar) }
 
+val finalJarTasks = listOf(
+    offlineJar,
+    platformOutputJar,
+)
+
+val buildAndCollect by tasks.registering(Copy::class) {
+    group = "controlify/versioned"
+
+    finalJarTasks.forEach { jar ->
+        dependsOn(jar)
+        from(jar.flatMap { it.archiveFile })
+    }
+
+    into(rootProject.layout.buildDirectory.dir("finalJars"))
+}
+
+createActiveTask(buildAndCollect)
+
 msPublishing {
     mpp {
         from(rootProject.publishMods)
         dryRun.set(rootProject.publishMods.dryRun)
 
+        // this can be set from the extension, but for the sake of storage, offline jars are not published
+        // to maven repository, it defeats the point of them anyway
         additionalFiles.setFrom(offlineJar.map { it.archiveFile })
 
         displayName.set("$versionWithoutMC for $loader $mcVersion")
@@ -352,4 +368,14 @@ fun <T> prop(property: String, required: Boolean = false, ifNull: () -> String? 
 fun isPropDefined(property: String): Boolean {
     return (System.getenv(property) ?: findProperty(property)?.toString())
         ?.isNotBlank() == true
+}
+
+fun <T : Task> createActiveTask(task: TaskProvider<T>, internal: Boolean = false) {
+    if (stonecutter.current.isActive) {
+        rootProject.tasks.register("${task.name}Active") {
+            group = "controlify${if (internal) "/versioned" else ""}"
+
+            dependsOn(task)
+        }
+    }
 }

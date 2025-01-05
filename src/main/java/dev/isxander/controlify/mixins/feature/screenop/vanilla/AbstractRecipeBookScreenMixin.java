@@ -30,25 +30,11 @@ import java.util.Set;
 *///?}
 public abstract class AbstractRecipeBookScreenMixin<T extends AbstractContainerMenu>
         extends AbstractContainerScreenMixin<T>
-        implements ScreenProcessorProvider, /*? if >=1.21.2 {*/ RecipeBookScreenProcessor.RecipeBookScreenAccessor /*?} else {*/ /*RecipeUpdateListener *//*?}*/ {
+        implements ScreenProcessorProvider /*? if <1.21.2 {*/ /*,RecipeUpdateListener *//*?}*/ {
 
     @Unique
     private final RecipeBookScreenProcessor<?> processor =
             new RecipeBookScreenProcessor<>(/*? if >=1.21.2 {*/ (AbstractRecipeBookScreen<?>) (Object) /*?}*/this);
-
-    //? if >=1.21.2 {
-    @Shadow
-    @Final
-    private RecipeBookComponent<?> recipeBookComponent;
-
-    @Override
-    public RecipeBookComponent<?> getRecipeBookComponent() {
-        return recipeBookComponent;
-    }
-    //?} else {
-    /*@Shadow(remap = false, aliases = {"getRecipeBookComponent","m_5564_","method_2659"})
-    public abstract RecipeBookComponent getRecipeBookComponent();
-    *///?}
 
     protected AbstractRecipeBookScreenMixin(Component title) {
         super(title);
