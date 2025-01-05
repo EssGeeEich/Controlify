@@ -65,6 +65,8 @@
   "controlify.gui.vertical_look_sensitivity.tooltip": "Seberapa pantas kamera bergerak secara menegak apabila melihat sekeliling.",
   "controlify.gui.vmouse_sensitivity": "Sensitiviti Tetikus Maya",
   "controlify.gui.vmouse_sensitivity.tooltip": "Seberapa laju tetikus maya bergerak.",
+  "controlify.gui.invert_vertical_look": "Invert Look Y-Axis",
+  "controlify.gui.invert_vertical_look.tooltip": "Inverts the look y-axis. e.g. up becomes down and vice versa.",
   "controlify.gui.reduce_aiming_sensitivity": "Kurangkan Sensitiviti Penyasaran",
   "controlify.gui.reduce_aiming_sensitivity.tooltip": "Mengurangkan sensitiviti apabila menyasar.",
   "controlify.gui.config.group.controls": "Kawalan",
