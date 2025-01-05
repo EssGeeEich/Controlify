@@ -65,6 +65,8 @@
   "controlify.gui.vertical_look_sensitivity.tooltip": "周りを見渡すと、カメラが垂直方向に動く速度",
   "controlify.gui.vmouse_sensitivity": "仮想マウス感度",
   "controlify.gui.vmouse_sensitivity.tooltip": "仮想マウスがどのくらい速く動くか",
+  "controlify.gui.invert_vertical_look": "Invert Look Y-Axis",
+  "controlify.gui.invert_vertical_look.tooltip": "Inverts the look y-axis. e.g. up becomes down and vice versa.",
   "controlify.gui.reduce_aiming_sensitivity": "照準感度を減らす",
   "controlify.gui.reduce_aiming_sensitivity.tooltip": "照準を合わせる時の感度を下げる",
   "controlify.gui.config.group.controls": "コントローラー",
