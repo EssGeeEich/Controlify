@@ -65,6 +65,8 @@
   "controlify.gui.vertical_look_sensitivity.tooltip": "Jak szybko kamera porusza się pionowo podczas rozglądania się.",
   "controlify.gui.vmouse_sensitivity": "Czułość wirtualnej myszy",
   "controlify.gui.vmouse_sensitivity.tooltip": "Jak szybko porusza się wirtualna mysz.",
+  "controlify.gui.invert_vertical_look": "Invert Look Y-Axis",
+  "controlify.gui.invert_vertical_look.tooltip": "Inverts the look y-axis. e.g. up becomes down and vice versa.",
   "controlify.gui.reduce_aiming_sensitivity": "Zmniejsz czułość celowania",
   "controlify.gui.reduce_aiming_sensitivity.tooltip": "Zmniejsza czułość podczas celowania.",
   "controlify.gui.config.group.controls": "Sterowanie",
