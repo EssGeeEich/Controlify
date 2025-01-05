@@ -65,6 +65,8 @@
   "controlify.gui.vertical_look_sensitivity.tooltip": "Qué tan rápido se mueve la cámara verticalmente al mirar alrededor.",
   "controlify.gui.vmouse_sensitivity": "Sensibilidad del Ratón Virtual",
   "controlify.gui.vmouse_sensitivity.tooltip": "Qué tan rápido se mueve el ratón virtual.",
+  "controlify.gui.invert_vertical_look": "Invert Look Y-Axis",
+  "controlify.gui.invert_vertical_look.tooltip": "Inverts the look y-axis. e.g. up becomes down and vice versa.",
   "controlify.gui.reduce_aiming_sensitivity": "Reducir Sensibilidad de Apuntar",
   "controlify.gui.reduce_aiming_sensitivity.tooltip": "Reduce la sensibilidad al apuntar.",
   "controlify.gui.config.group.controls": "Controles",
