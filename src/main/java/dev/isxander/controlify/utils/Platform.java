@@ -10,7 +10,7 @@ public enum Platform {
 
     private static final Platform currentPlatform;
     static {
-        String osName = System.getProperty("platform.name");
+        String osName = System.getProperty("os.name");
 
         if (osName.startsWith("Linux")) {
             if ("dalvik".equalsIgnoreCase(System.getProperty("java.vm.name"))) {
