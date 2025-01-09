@@ -330,7 +330,7 @@ public class SDL3NativesManager {
         public static final Target CURRENT = Util.make(() -> {
             Platform platform = Platform.current();
 
-            String arch = System.getProperty("platform.arch");
+            String arch = System.getProperty("os.arch");
             boolean is64bit = arch.contains("64");
             boolean isARM = arch.contains("arm") || arch.contains("aarch");
 

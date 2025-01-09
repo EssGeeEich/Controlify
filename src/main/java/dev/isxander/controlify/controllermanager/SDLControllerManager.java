@@ -217,7 +217,7 @@ public class SDLControllerManager extends AbstractControllerManager {
                 if (count < 0) {
                     CUtil.LOGGER.error("Failed to load gamepad mappings: {}", SDL_GetError());
                 } else if (count == 0) {
-                    CUtil.LOGGER.warn("Successfully applied gamepad mappings but none were found for this platform. Unsupported OS?");
+                    CUtil.LOGGER.warn("Successfully applied gamepad mappings but none were found for this OS. Unsupported OS?");
                 } else {
                     CUtil.LOGGER.log("Successfully loaded {} gamepad mapping entries!", count);
                 }
