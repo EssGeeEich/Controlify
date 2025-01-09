@@ -36,18 +36,13 @@ public class LowBatteryNotifier {
                     .map(BatteryLevelComponent::getBatteryLevel)
                     .orElse(new PowerState.Unknown());
 
-            if (batteryLevel instanceof PowerState.Unknown || batteryLevel instanceof PowerState.WiredOnly) {
-                continue;
-            }
+            String uid = controller.uid();
 
-            String uid = controller.info().uid();
-            int percent = batteryLevel.percent();
-
-            if (percent <= 10) {
+            if (batteryLevel instanceof PowerState.Depleting(int percent) && percent <= 10) {
                 if (!notifiedControllers.contains(uid)) {
                     ToastUtils.sendToast(
                             Component.translatable("controlify.toast.low_battery.title"),
-                            Component.translatable("controlify.toast.low_battery.message", controller.name()),
+                            Component.translatable("controlify.toast.low_battery.message", controller.name(), percent),
                             true
                     );
 
