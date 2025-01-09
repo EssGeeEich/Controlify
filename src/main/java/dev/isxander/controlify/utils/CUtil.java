@@ -4,15 +4,18 @@ import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.serialization.*;
+import dev.isxander.controlify.utils.log.ControlifyLogger;
 import net.minecraft.Util;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.util.StringRepresentable;
-import org.slf4j.Logger;
+import org.apache.commons.codec.binary.Hex;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
@@ -22,7 +25,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class CUtil {
-    public static final Logger LOGGER = LoggerFactory.getLogger("Controlify");
+    public static final ControlifyLogger LOGGER = ControlifyLogger.createMasterLogger(LoggerFactory.getLogger("Controlify"));
     
     public static ResourceLocation rl(String path) {
         return rl("controlify", path);
@@ -49,6 +52,8 @@ public class CUtil {
         return builder;
         *//*?}*/
     }
+
+    public static final boolean IS_POJAV_LAUNCHER = System.getenv("POJAV_NATIVEDIR") != null;
 
     /**
      * Opens a URI using the system's default handler.
@@ -80,6 +85,28 @@ public class CUtil {
                 return created;
             }
         };
+    }
+
+    public static String createUIDFromBytes(byte[]... bytes) {
+        MessageDigest md;
+        try {
+            md = MessageDigest.getInstance("MD5");
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("Could not get MD5 hash.", e);
+        }
+
+        for (byte[] b : bytes)
+            md.update(b);
+        byte[] digest = md.digest();
+        return Hex.encodeHexString(digest);
+    }
+
+    public static void sleepChecked(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            LOGGER.error("Failed to sleep for {}ms", e, millis);
+        }
     }
 
     private enum URIOpener {

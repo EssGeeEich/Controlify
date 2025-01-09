@@ -105,7 +105,7 @@ public class Controlify implements ControlifyApi {
     public void preInitialiseControlify() {
         DebugProperties.printProperties();
 
-        CUtil.LOGGER.info("Pre-initializing Controlify...");
+        CUtil.LOGGER.log("Pre-initializing Controlify...");
 
         if (DebugProperties.MIXIN_AUDIT) {
             MixinEnvironment.getCurrentEnvironment().audit();
@@ -149,7 +149,7 @@ public class Controlify implements ControlifyApi {
             }
         });
         SidedNetworkApi.S2C().<ServerPolicyPacket>listenForPacket(ServerPolicyPacket.CHANNEL, packet -> {
-            CUtil.LOGGER.info("Connected server specified '{}' policy is {}.", packet.id(), packet.allowed() ? "ALLOWED" : "DISALLOWED");
+            CUtil.LOGGER.log("Connected server specified '{}' policy is {}.", packet.id(), packet.allowed() ? "ALLOWED" : "DISALLOWED");
             ServerPolicies.getById(packet.id()).set(ServerPolicy.fromBoolean(packet.allowed()));
         });
 
@@ -177,7 +177,7 @@ public class Controlify implements ControlifyApi {
      * as one or more controllers are connected.
      */
     public void initializeControlify() {
-        CUtil.LOGGER.info("Initializing Controlify...");
+        CUtil.LOGGER.log("Initializing Controlify...");
 
         config().load();
 
@@ -233,7 +233,7 @@ public class Controlify implements ControlifyApi {
     }
 
     private void doSteamDeckChecks() {
-        CUtil.LOGGER.info("Steam Deck state: {}", SteamDeckUtil.DECK_MODE);
+        CUtil.LOGGER.log("Steam Deck state: {}", SteamDeckUtil.DECK_MODE);
 
         if (!SteamDeckUtil.IS_STEAM_DECK) {
             return;
@@ -252,7 +252,7 @@ public class Controlify implements ControlifyApi {
         }
 
         if (connectedToCef && SteamDeckUtil.DECK_MODE == SteamDeckMode.GAMING_MODE) {
-            CUtil.LOGGER.info("Steam Deck is in gaming mode and Controlify has successfully connected to CEF.");
+            CUtil.LOGGER.log("Steam Deck is in gaming mode and Controlify has successfully connected to CEF.");
         }
     }
 
@@ -273,14 +273,14 @@ public class Controlify implements ControlifyApi {
         controllerManager.discoverControllers();
 
         if (controllerManager.getConnectedControllers().isEmpty()) {
-            CUtil.LOGGER.info("No controllers found.");
+            CUtil.LOGGER.log("No controllers found.");
         }
 
         // if no controller is currently selected, pick one
         if (getCurrentController().isEmpty()) {
             Optional<ControllerEntity> lastUsedController = controllerManager.getConnectedControllers()
                     .stream()
-                    .filter(c -> c.info().uid().equals(config().currentControllerUid()))
+                    .filter(c -> c.uid().equals(config().currentControllerUid()))
                     .findAny();
 
             if (lastUsedController.isPresent()) {
@@ -321,14 +321,14 @@ public class Controlify implements ControlifyApi {
         finishedInit = true;
 
         return askNatives().whenComplete((loaded, th) -> UnhandledCompletableFutures.run(() -> {
-            CUtil.LOGGER.info("Finishing Controlify init...");
+            CUtil.LOGGER.log("Finishing Controlify init...");
 
             if (!loaded) {
                 CUtil.LOGGER.warn("CONTROLIFY DID NOT LOAD SDL3 NATIVES. MANY FEATURES DISABLED!");
             }
 
             try {
-                controllerManager = loaded ? new SDLControllerManager() : new GLFWControllerManager();
+                controllerManager = loaded ? new SDLControllerManager(CUtil.LOGGER) : new GLFWControllerManager(CUtil.LOGGER);
             } catch (Throwable throwable) {
                 CUtil.LOGGER.error("Failed to initialize controller manager", throwable);
                 return;
@@ -353,7 +353,7 @@ public class Controlify implements ControlifyApi {
             discoverControllers();
 
             if (DebugProperties.INIT_DUMP) {
-                CUtil.LOGGER.info("\n{}", DebugDump.dumpDebug());
+                CUtil.LOGGER.log("\n{}", DebugDump.dumpDebug());
             }
         }, minecraft)).thenApply(t -> null);
     }
@@ -646,9 +646,9 @@ public class Controlify implements ControlifyApi {
             return;
         }
 
-        DebugLog.log("Updated current controller to {}({})", controller.name(), controller.info().uid());
+        DebugLog.log("Updated current controller to {}({})", controller.name(), controller.uid());
 
-        if (!controller.info().uid().equals(config().currentControllerUid())) {
+        if (!controller.uid().equals(config().currentControllerUid())) {
             config().setDirty();
         }
 

@@ -21,7 +21,7 @@ public interface InputBindingSupplier {
     default InputBinding on(@NotNull ControllerEntity controller) {
         return Objects.requireNonNull(
                 onOrNull(controller),
-                () -> "Attempted to fetch " + bindId() + " for controller " + controller.info().uid() + " but it did not exist." +
+                () -> "Attempted to fetch " + bindId() + " for controller " + controller.uid() + " but it did not exist." +
                         "The binding registry callback may have a filter that did not pass for this controller.");
     }
 

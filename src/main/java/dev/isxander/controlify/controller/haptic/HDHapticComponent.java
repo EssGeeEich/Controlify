@@ -1,5 +1,6 @@
 package dev.isxander.controlify.controller.haptic;
 
+import com.mojang.blaze3d.audio.SoundBuffer;
 import dev.isxander.controlify.controller.serialization.ConfigClass;
 import dev.isxander.controlify.controller.serialization.ConfigHolder;
 import dev.isxander.controlify.controller.ECSComponent;
@@ -19,6 +20,7 @@ import net.minecraft.util.RandomSource;
 
 import javax.sound.sampled.AudioFormat;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
@@ -29,6 +31,10 @@ public class HDHapticComponent implements ECSComponent, ConfigHolder<HDHapticCom
     private Consumer<CompleteSoundData> playHapticConsumer;
     private final RandomSource randomSource;
 
+    // the existing sound buffer library in the sound engine works on a ResourceProvider for registered sounds only
+    // haptics are not sounds.
+    private static final SoundBufferLibrary hapticBufferLibrary = new SoundBufferLibrary(Minecraft.getInstance().getResourceManager());
+
     public HDHapticComponent() {
         this.randomSource = RandomSource.create();
     }
@@ -36,26 +42,40 @@ public class HDHapticComponent implements ECSComponent, ConfigHolder<HDHapticCom
     public void playHaptic(ResourceLocation haptic) {
         if (!confObj().enabled || playHapticConsumer == null) return;
 
-        getSoundData(haptic).thenAccept(playHapticConsumer);
+        getSoundData(hapticBufferLibrary.getCompleteBuffer(haptic))
+                .thenAccept(playHapticConsumer)
+                .exceptionally(throwable -> {
+                    throwable.printStackTrace();
+                    return null;
+                });
     }
 
     public void playHaptic(SoundEvent sound) {
         ResourceLocation location = Minecraft.getInstance().getSoundManager()
                 .getSoundEvent(/*? if >=1.21.2 {*/ sound.location() /*?} else {*/ /*sound.getLocation() *//*?}*/)
                 .getSound(randomSource).getLocation();
-        this.playHaptic(CUtil.rl(location.getNamespace(), "sounds/" + location.getPath() + ".ogg"));
+
+        SoundManager soundManager = Minecraft.getInstance().getSoundManager();
+        SoundEngine soundEngine = ((SoundManagerAccessor) soundManager).getSoundEngine();
+        SoundBufferLibrary bufferLibrary = ((SoundEngineAccessor) soundEngine).getSoundBuffers();
+
+        ResourceLocation soundId = CUtil.rl(location.getNamespace(), "sounds/" + location.getPath() + ".ogg");
+
+        getSoundData(bufferLibrary.getCompleteBuffer(soundId))
+                .thenAccept(playHapticConsumer)
+                .exceptionally(throwable -> {
+                    throwable.printStackTrace();
+                    return null;
+                });
     }
 
     public void acceptPlayHaptic(Consumer<CompleteSoundData> consumer) {
         this.playHapticConsumer = consumer;
     }
 
-    private CompletableFuture<CompleteSoundData> getSoundData(ResourceLocation sound) {
-        SoundManager soundManager = Minecraft.getInstance().getSoundManager();
-        SoundEngine soundEngine = ((SoundManagerAccessor) soundManager).getSoundEngine();
-        SoundBufferLibrary bufferLibrary = ((SoundEngineAccessor) soundEngine).getSoundBuffers();
-
-        return bufferLibrary.getCompleteBuffer(sound)
+    private CompletableFuture<CompleteSoundData> getSoundData(CompletableFuture<SoundBuffer> sound) {
+        // TODO: this recomputes on every play
+        return sound
                 .thenApply(soundBuffer -> {
                     var accessor = (SoundBufferAccessor) soundBuffer;
                     ByteBuffer bytes = accessor.getData();
@@ -65,8 +85,13 @@ public class HDHapticComponent implements ECSComponent, ConfigHolder<HDHapticCom
                         return null;
                     }
 
-                    byte[] audio = new byte[bytes.capacity()];
+                    bytes.rewind();
+
+                    byte[] audio = new byte[bytes.remaining()];
+
                     bytes.get(audio);
+
+                    System.out.println("Audio: " + Arrays.toString(audio));
 
                     return new CompleteSoundData(audio, format);
                 });

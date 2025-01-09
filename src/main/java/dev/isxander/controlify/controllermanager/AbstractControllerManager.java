@@ -4,24 +4,18 @@ import com.google.common.collect.ImmutableList;
 import dev.isxander.controlify.Controlify;
 import dev.isxander.controlify.api.event.ControlifyEvents;
 import dev.isxander.controlify.controller.ControllerEntity;
-import dev.isxander.controlify.driver.Driver;
-import dev.isxander.controlify.driver.steamdeck.SteamDeckMode;
 import dev.isxander.controlify.driver.steamdeck.SteamDeckUtil;
 import dev.isxander.controlify.hid.ControllerHIDService;
 import dev.isxander.controlify.hid.HIDDevice;
 import dev.isxander.controlify.hid.HIDIdentifier;
 import dev.isxander.controlify.utils.ControllerUtils;
-import dev.isxander.controlify.utils.DebugLog;
-import dev.isxander.controlify.utils.CUtil;
+import dev.isxander.controlify.utils.log.ControlifyLogger;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.CrashReport;
 import net.minecraft.CrashReportCategory;
 import net.minecraft.ReportedException;
 import net.minecraft.client.Minecraft;
-import net.minecraft.server.packs.resources.Resource;
-import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceProvider;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -35,36 +29,40 @@ public abstract class AbstractControllerManager implements ControllerManager {
     protected final Map<String, ControllerEntity> controllersByUid = new Object2ObjectOpenHashMap<>();
     protected final Map<String, ControllerHIDService.ControllerHIDInfo> hidInfoByUid = new Object2ObjectOpenHashMap<>();
 
+    protected final ControlifyLogger logger;
 
-    public AbstractControllerManager() {
+    public AbstractControllerManager(ControlifyLogger logger) {
         this.controlify = Controlify.instance();
         this.minecraft = Minecraft.getInstance();
+        this.logger = logger.createSubLogger("ControllerManager");
 
         this.loadGamepadMappings(minecraft.getResourceManager());
     }
 
     public Optional<ControllerEntity> tryCreate(UniqueControllerID ucid, ControllerHIDService.ControllerHIDInfo hidInfo) {
+        ControlifyLogger controllerLogger = logger.createSubLogger("Controller #" + ucid);
+
         try {
             if (controllersByJid.containsKey(ucid)) {
-                CUtil.LOGGER.warn("Tried to create controller that already is initialised: {}", ucid);
+                controllerLogger.warn("Tried to create controller that already is initialised: {}.", ucid);
                 return Optional.empty();
             }
 
             if (hidInfo.type().dontLoad()) {
-                DebugLog.log("Preventing load of controller #" + ucid + " because its type prevents loading.");
+                controllerLogger.debugLog("Preventing load of controller #" + ucid + " because its type prevents loading.");
                 return Optional.empty();
             }
 
             if (hidInfo.type().isSteamDeck()) {
                 if (!SteamDeckUtil.DECK_MODE.isGamingMode()) {
-                    CUtil.LOGGER.warn("Preventing load of controller #{} because Steam Deck is not in gaming mode.", ucid);
+                    controllerLogger.log("Preventing load of controller #{} because Steam Deck is not in gaming mode.", ucid);
                     return Optional.empty();
                 }
             }
 
-            return createController(ucid, hidInfo);
+            return createController(ucid, hidInfo, controllerLogger);
         } catch (Throwable e) {
-            CUtil.LOGGER.error("Failed to create controller #{}!", ucid, e);
+            controllerLogger.error("Failed to create controller #{}!", e, ucid);
             CrashReport crashReport = CrashReport.forThrowable(e, "Creating controller #" + ucid);
             CrashReportCategory category = crashReport.addCategory("Controller Info");
             category.setDetail("Unique controller ID", ucid);
@@ -72,16 +70,18 @@ public abstract class AbstractControllerManager implements ControllerManager {
             category.setDetail("HID path", hidInfo.hidDevice().map(HIDDevice::path).orElse("N/A"));
             category.setDetail("HID service status", Controlify.instance().controllerHIDService().isDisabled() ? "Disabled" : "Enabled");
             category.setDetail("System name", Optional.ofNullable(getControllerSystemName(ucid)).orElse("N/A"));
-            throw new ReportedException(crashReport);
+            controllerLogger.crashReport(crashReport);
+            return Optional.empty();
+            //throw new ReportedException(crashReport);
         }
     }
 
-    protected abstract Optional<ControllerEntity> createController(UniqueControllerID ucid, ControllerHIDService.ControllerHIDInfo hidInfo);
+    protected abstract Optional<ControllerEntity> createController(UniqueControllerID ucid, ControllerHIDService.ControllerHIDInfo hidInfo, ControlifyLogger controllerLogger);
 
     @Override
     public void tick(boolean outOfFocus) {
         for (ControllerEntity controller : controllersByUid.values()) {
-            controller.drivers().forEach(d -> d.update(controller, outOfFocus));
+            controller.update(outOfFocus);
             ControlifyEvents.CONTROLLER_STATE_UPDATE.invoke(new ControlifyEvents.ControllerStateUpdate(controller));
         }
     }
@@ -89,15 +89,15 @@ public abstract class AbstractControllerManager implements ControllerManager {
     protected void onControllerConnected(ControllerEntity controller, boolean hotplug) {
         boolean newController = controlify.config().loadControllerConfig(controller);
 
-        CUtil.LOGGER.info("Controller connected: {}", ControllerUtils.createControllerString(controller));
+        logger.log("Controller connected: {}", ControllerUtils.createControllerString(controller));
 
         ControlifyEvents.CONTROLLER_CONNECTED.invoke(new ControlifyEvents.ControllerConnected(controller, hotplug, newController));
     }
 
     protected void onControllerRemoved(ControllerEntity controller) {
-        CUtil.LOGGER.info("Controller disconnected: {}", ControllerUtils.createControllerString(controller));
+        logger.log("Controller disconnected: {}", ControllerUtils.createControllerString(controller));
 
-        closeController(controller.info().uid());
+        closeController(controller.uid());
 
         ControlifyEvents.CONTROLLER_DISCONNECTED.invoke(new ControlifyEvents.ControllerDisconnected(controller));
     }
@@ -114,7 +114,7 @@ public abstract class AbstractControllerManager implements ControllerManager {
     }
 
     protected void addController(UniqueControllerID ucid, ControllerEntity controller) {
-        controllersByUid.put(controller.info().uid(), controller);
+        controllersByUid.put(controller.uid(), controller);
         controllersByJid.put(ucid, controller);
     }
 

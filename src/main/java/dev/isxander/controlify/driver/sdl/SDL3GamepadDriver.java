@@ -15,6 +15,7 @@ import dev.isxander.controlify.controller.impl.ControllerStateImpl;
 import dev.isxander.controlify.controller.input.InputComponent;
 import dev.isxander.controlify.controller.touchpad.Touchpads;
 import dev.isxander.controlify.utils.CUtil;
+import dev.isxander.controlify.utils.log.ControlifyLogger;
 import dev.isxander.sdl3java.api.gamepad.SDL_Gamepad;
 import dev.isxander.sdl3java.api.joystick.SDL_JoystickGUID;
 import dev.isxander.sdl3java.api.joystick.SDL_JoystickID;
@@ -43,8 +44,8 @@ public class SDL3GamepadDriver extends SDLCommonDriver<SDL_Gamepad> {
 
     private final int numTouchpads;
     
-    public SDL3GamepadDriver(SDL_Gamepad ptrController, SDL_JoystickID jid, ControllerType type) {
-        super(ptrController, jid, type);
+    public SDL3GamepadDriver(SDL_Gamepad ptrController, SDL_JoystickID jid, ControllerType type, ControlifyLogger logger) {
+        super(ptrController, jid, type, logger);
  
         this.isGryoSupported = SDL_GamepadHasSensor(ptrController, SDL_SensorType.SDL_SENSOR_GYRO);
         this.numTouchpads = SDL_GetNumGamepadTouchpads(ptrController);
@@ -220,6 +221,16 @@ public class SDL3GamepadDriver extends SDLCommonDriver<SDL_Gamepad> {
     @Override
     protected String SDL_GetControllerSerial(SDL_Gamepad ptrController) {
         return SDL_GetGamepadSerial(ptrController);
+    }
+
+    @Override
+    protected short SDL_GetControllerVendor(SDL_Gamepad ptrController) {
+        return (short) SDL_GetGamepadVendor(ptrController);
+    }
+
+    @Override
+    protected short SDL_GetControllerProduct(SDL_Gamepad ptrController) {
+        return (short) SDL_GetGamepadProduct(ptrController);
     }
 
     @Override

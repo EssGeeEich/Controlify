@@ -160,7 +160,7 @@ public class SubmitUnknownControllerScreen extends Screen implements DontInterup
                 return false;
             }
 
-            CUtil.LOGGER.info("Successfully sent controller information to '{}'", SUBMISSION_URL);
+            CUtil.LOGGER.log("Successfully sent controller information to '{}'", SUBMISSION_URL);
             return true;
         } catch (Exception e) {
             CUtil.LOGGER.error("Failed to submit controller to '%s'".formatted(SUBMISSION_URL), e);
@@ -174,7 +174,7 @@ public class SubmitUnknownControllerScreen extends Screen implements DontInterup
         JsonObject object = new JsonObject();
         object.addProperty("vendorID", hid.vendorId());
         object.addProperty("productID", hid.productId());
-        object.addProperty("GUID", controller.info().guid());
+        object.addProperty("GUID", controller.guid());
         object.addProperty("reportedName", nameField.getValue());
         object.addProperty("controlifyVersion", PlatformMainUtil.getControlifyVersion());
         object.addProperty("operational", operationalCheckbox.selected());

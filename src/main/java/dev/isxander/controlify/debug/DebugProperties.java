@@ -18,16 +18,14 @@ public class DebugProperties {
     public static final boolean DEBUG_SNAPPING = boolProp("controlify.debug.snapping", false, false);
     /** Forces all gamepads to be treated as a regular joystick */
     public static final boolean FORCE_JOYSTICK = boolProp("controlify.debug.force_joystick", false, false);
-    /** Print what drivers are being used */
-    public static final boolean PRINT_DRIVER = boolProp("controlify.debug.print_driver", true, true);
     /** Debug dumps after finishing init */
     public static final boolean INIT_DUMP = boolProp("controlify.debug.init_dump", false, true);
-    /** Use SDL Serial number instead of HID+Index **/
-    public static final boolean SDL_USE_SERIAL_FOR_UID = boolProp("controlify.debug.sdl_use_serial_for_uid", false, false);
     /** Use a custom url to access CEF, you can use remote access here to receive control remotely. **/
     public static final @Nullable String STEAM_DECK_CUSTOM_CEF_URL = strProp("controlify.debug.steam_deck_custom_cef_url", null, null);
     /** Run a mixin audit - useful for last checks before releasing a mod version */
     public static final boolean MIXIN_AUDIT = boolProp("controlify.debug.mixin_audit", false, false);
+    /** Enables the currently non-functional HD haptics support */
+    public static final boolean ENABLE_HD_HAPTICS = boolProp("controlify.debug.enable_hd_haptics", false, true);
 
     public static void printProperties() {
         if (properties.stream().noneMatch(prop -> prop.state() != prop.def()))

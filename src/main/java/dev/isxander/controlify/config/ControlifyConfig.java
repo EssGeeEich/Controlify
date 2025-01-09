@@ -47,7 +47,7 @@ public class ControlifyConfig {
     }
 
     public void save() {
-        CUtil.LOGGER.info("Saving Controlify config...");
+        CUtil.LOGGER.log("Saving Controlify config...");
 
         JsonObject serialObject;
         try {
@@ -77,10 +77,10 @@ public class ControlifyConfig {
     }
 
     public void load() {
-        CUtil.LOGGER.info("Loading Controlify config...");
+        CUtil.LOGGER.log("Loading Controlify config...");
 
         if (!Files.exists(CONFIG_PATH)) {
-            CUtil.LOGGER.info("First launch detected. Creating initial config file!");
+            CUtil.LOGGER.log("First launch detected. Creating initial config file!");
             firstLaunch = true;
             save();
             return;
@@ -104,7 +104,7 @@ public class ControlifyConfig {
         { // Current controller
             obj.addProperty(
                     "current_controller",
-                    controlify.getCurrentController().map(c -> c.info().uid()).orElse(null)
+                    controlify.getCurrentController().map(ControllerEntity::uid).orElse(null)
             );
         }
 
@@ -127,7 +127,7 @@ public class ControlifyConfig {
         for (ControllerEntity controller : controllerManager.getConnectedControllers()) {
             // get the existing config to modify
             JsonObject controllerObject = storedControllerConfig
-                    .computeIfAbsent(controller.info().uid(), k -> new JsonObject());
+                    .computeIfAbsent(controller.uid(), k -> new JsonObject());
 
             // get config object within that object, or create and add it
             JsonObject configObject = controllerObject.getAsJsonObject("config");
@@ -141,7 +141,7 @@ public class ControlifyConfig {
             // so if the user interchanges between BT+W it won't lose the HD haptic config
             controller.serializeToObject(configObject, GSON);
 
-            storedControllerConfig.put(controller.info().uid(), controllerObject);
+            storedControllerConfig.put(controller.uid(), controllerObject);
         }
     }
 
@@ -186,7 +186,7 @@ public class ControlifyConfig {
     }
 
     public boolean loadControllerConfig(ControllerEntity controller) {
-        JsonObject json = storedControllerConfig.get(controller.info().uid());
+        JsonObject json = storedControllerConfig.get(controller.uid());
 
         if (json == null) {
             CUtil.LOGGER.warn("Controller {} has no config to load. Using defaults.", controller.info().ucid());

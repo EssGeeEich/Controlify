@@ -1,5 +1,7 @@
 package dev.isxander.controlify.driver.glfw;
 
+import dev.isxander.controlify.controller.info.DriverNameComponent;
+import dev.isxander.controlify.controller.info.GUIDComponent;
 import dev.isxander.controlify.controller.input.HatState;
 import dev.isxander.controlify.controller.input.JoystickInputs;
 import dev.isxander.controlify.controller.ControllerEntity;
@@ -36,7 +38,15 @@ public class GLFWJoystickDriver implements Driver {
 
     @Override
     public void addComponents(ControllerEntity controller) {
-        controller.setComponent(this.inputComponent = new InputComponent(controller, numButtons, numAxes * 2, numHats, false, Set.of(), controller.info().type().mappingId()));
+        controller.setComponent(new DriverNameComponent(this.name));
+        controller.setComponent(new GUIDComponent(this.guid));
+
+        controller.setComponent(this.inputComponent = new InputComponent(
+                controller, numButtons, numAxes * 2, numHats,
+                false,
+                Set.of(),
+                controller.info().type().mappingId()
+        ));
 
     }
 
@@ -48,11 +58,6 @@ public class GLFWJoystickDriver implements Driver {
     @Override
     public void close() {
 
-    }
-
-    @Override
-    public String getDriverName() {
-        return this.name;
     }
 
     private void updateInput() {

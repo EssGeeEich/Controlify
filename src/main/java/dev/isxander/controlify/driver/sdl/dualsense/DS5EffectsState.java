@@ -31,7 +31,7 @@ public class DS5EffectsState extends Structure {
     public byte ucMicrophoneVolume; // not linear, max 64, 0 is not fully muted
 
     public byte ucAudioEnableBits;
-    @MagicConstant(valuesFromClass = MagicConstant.class)
+    @MagicConstant(valuesFromClass = MuteLightState.class)
     public byte ucMicLightMode;
     public byte ucAudioMuteBits;
 

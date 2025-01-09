@@ -8,6 +8,7 @@ import dev.isxander.controlify.controller.input.InputComponent;
 import dev.isxander.controlify.controller.input.JoystickInputs;
 import dev.isxander.controlify.controller.*;
 import dev.isxander.controlify.controller.impl.ControllerStateImpl;
+import dev.isxander.controlify.utils.log.ControlifyLogger;
 import dev.isxander.sdl3java.api.joystick.SDL_Joystick;
 import dev.isxander.sdl3java.api.joystick.SDL_JoystickGUID;
 import dev.isxander.sdl3java.api.joystick.SDL_JoystickID;
@@ -24,8 +25,8 @@ public class SDL3JoystickDriver extends SDLCommonDriver<SDL_Joystick> {
     private InputComponent inputComponent;
     private final int numAxes, numButtons, numHats;
 
-    public SDL3JoystickDriver(SDL_Joystick ptrJoystick, SDL_JoystickID jid, ControllerType type) {
-        super(ptrJoystick, jid, type);
+    public SDL3JoystickDriver(SDL_Joystick ptrJoystick, SDL_JoystickID jid, ControllerType type, ControlifyLogger logger) {
+        super(ptrJoystick, jid, type, logger);
 
         this.numAxes = SDL_GetNumJoystickAxes(ptrJoystick);
         this.numButtons = SDL_GetNumJoystickButtons(ptrJoystick);
@@ -103,6 +104,16 @@ public class SDL3JoystickDriver extends SDLCommonDriver<SDL_Joystick> {
     @Override
     protected String SDL_GetControllerSerial(SDL_Joystick ptrController) {
         return SDL_GetJoystickSerial(ptrController);
+    }
+
+    @Override
+    protected short SDL_GetControllerVendor(SDL_Joystick ptrController) {
+        return SDL_GetJoystickVendor(ptrController);
+    }
+
+    @Override
+    protected short SDL_GetControllerProduct(SDL_Joystick ptrController) {
+        return SDL_GetJoystickProduct(ptrController);
     }
 
     @Override

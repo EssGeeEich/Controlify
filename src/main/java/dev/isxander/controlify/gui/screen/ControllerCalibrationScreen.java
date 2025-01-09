@@ -133,7 +133,7 @@ public class ControllerCalibrationScreen extends Screen implements DontInteruptS
 
     @Override
     public void tick() {
-        if (!controllerManager.isControllerConnected(controller.info().uid())) {
+        if (!controllerManager.isControllerConnected(controller.uid())) {
             onClose();
             return;
         }

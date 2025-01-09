@@ -1,7 +1,5 @@
 package dev.isxander.controlify.controller;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -9,6 +7,10 @@ import dev.isxander.controlify.controller.battery.BatteryLevelComponent;
 import dev.isxander.controlify.controller.dualsense.DualSenseComponent;
 import dev.isxander.controlify.controller.haptic.HDHapticComponent;
 import dev.isxander.controlify.controller.haptic.SimpleHapticComponent;
+import dev.isxander.controlify.controller.info.ControllerInfo;
+import dev.isxander.controlify.controller.info.DriverNameComponent;
+import dev.isxander.controlify.controller.info.GUIDComponent;
+import dev.isxander.controlify.controller.info.UIDComponent;
 import dev.isxander.controlify.controller.keyboard.NativeKeyboardComponent;
 import dev.isxander.controlify.controller.serialization.ConfigHolder;
 import dev.isxander.controlify.controller.serialization.IConfig;
@@ -22,31 +24,46 @@ import dev.isxander.controlify.controller.rumble.TriggerRumbleComponent;
 import dev.isxander.controlify.controller.touchpad.TouchpadComponent;
 import dev.isxander.controlify.driver.Driver;
 import dev.isxander.controlify.utils.CUtil;
+import dev.isxander.controlify.utils.log.ControlifyLogger;
 import net.minecraft.resources.ResourceLocation;
 import org.apache.commons.lang3.SerializationException;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class ControllerEntity extends ECSEntityImpl {
     private final ControllerInfo info;
-    private final List<Driver> drivers;
+    private final Driver driver;
+    private final ControlifyLogger logger;
 
-    public ControllerEntity(ControllerInfo info, List<Driver> drivers) {
+    public ControllerEntity(ControllerInfo info, Driver driver, ControlifyLogger logger) {
         this.info = info;
-        this.drivers = drivers;
+        this.driver = driver;
+        this.logger = logger;
 
         this.setComponent(new ConfigImpl<>(GenericControllerConfig::new, GenericControllerConfig.class));
 
-        // priority list. index 0 is highest priority and overrides all others
-        for (Driver driver : Lists.reverse(drivers)) {
-            driver.addComponents(this);
-        }
-
+        driver.addComponents(this);
         this.getAllComponents().values().forEach(ECSComponent::finalise);
+
+        logger.debugLog("Components: {}", this.getAllComponents().keySet().stream().map(ResourceLocation::toString).collect(Collectors.joining(", ")));
+    }
+
+    public String uid() {
+        return this.<UIDComponent>getComponent(UIDComponent.ID).orElseThrow().value();
+    }
+
+    @NotNull
+    public String driverName() {
+        return this.<DriverNameComponent>getComponent(DriverNameComponent.ID).orElseThrow().value();
+    }
+
+    @NotNull
+    public String guid() {
+        return this.<GUIDComponent>getComponent(GUIDComponent.ID).orElseThrow().value();
     }
 
     public ControllerInfo info() {
@@ -63,11 +80,11 @@ public class ControllerEntity extends ECSEntityImpl {
         if (friendlyName != null)
             return friendlyName;
 
-        return info().driverName();
+        return driverName();
     }
 
-    public ImmutableList<Driver> drivers() {
-        return ImmutableList.copyOf(drivers);
+    public Driver drivers() {
+        return driver;
     }
 
     public Optional<InputComponent> input() {
@@ -126,6 +143,10 @@ public class ControllerEntity extends ECSEntityImpl {
         return this.getComponent(NativeKeyboardComponent.ID);
     }
 
+    public void update(boolean outOfFocus) {
+        this.driver.update(this, outOfFocus);
+    }
+
     public Map<ResourceLocation, IConfig<?>> getAllConfigs() {
         Map<ResourceLocation, IConfig<?>> configs = new HashMap<>();
 
@@ -171,6 +192,16 @@ public class ControllerEntity extends ECSEntityImpl {
     }
 
     public void close() {
-        this.drivers.forEach(Driver::close);
+        this.driver.close();
+    }
+
+    public ControlifyLogger getLogger() {
+        return logger;
+    }
+
+    @Override
+    public <T extends ECSComponent> boolean setComponent(T component) {
+        logger.debugLog("Adding component: {}", component.id());
+        return super.setComponent(component);
     }
 }

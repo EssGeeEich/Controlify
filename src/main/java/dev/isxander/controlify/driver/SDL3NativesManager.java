@@ -5,9 +5,12 @@ import dev.isxander.controlify.config.ControlifyConfig;
 import dev.isxander.controlify.gui.screen.DownloadingSDLScreen;
 import dev.isxander.controlify.platform.main.PlatformMainUtil;
 import dev.isxander.controlify.utils.CUtil;
+import dev.isxander.controlify.utils.Platform;
 import dev.isxander.controlify.utils.TrackingBodySubscriber;
 import dev.isxander.controlify.utils.TrackingConsumer;
+import dev.isxander.controlify.utils.log.ControlifyLogger;
 import dev.isxander.sdl3java.api.version.SdlVersionConst;
+import dev.isxander.sdl3java.api.version.SdlVersionRecord;
 import dev.isxander.sdl3java.jna.SdlNativeLibraryLoader;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
@@ -27,16 +30,17 @@ import static dev.isxander.sdl3java.api.SdlSubSystemConst.*;
 import static dev.isxander.sdl3java.api.error.SdlError.*;
 import static dev.isxander.sdl3java.api.hints.SdlHints.*;
 import static dev.isxander.sdl3java.api.hints.SdlHintConsts.*;
+import static dev.isxander.sdl3java.api.version.SdlVersion.*;
 
 public class SDL3NativesManager {
-    private static final String SDL3_VERSION = "3." + SdlVersionConst.SDL_COMMIT;
+    private static final String SDL3_VERSION = SDL_GetJavaBindingsVersion() + "." + SdlVersionConst.SDL_COMMIT;
     private static final Map<Target, NativeFileInfo> NATIVE_LIBRARIES = Map.of(
-            new Target(Util.OS.WINDOWS, true, false), new NativeFileInfo("win32-x86-64", "windows-x86_64", "dll"),
-            new Target(Util.OS.WINDOWS, false, false), new NativeFileInfo("win32-x86", "window-x86", "dll"),
-            new Target(Util.OS.LINUX, true, false), new NativeFileInfo("linux-x86-64", "linux-x86_64", "so"),
-            new Target(Util.OS.LINUX, true, true), new NativeFileInfo("linux-aarch64", "linux-aarch64", "so"),
-            new Target(Util.OS.OSX, true, false), new NativeFileInfo("darwin-x86-64", "macos-universal", "dylib"),
-            new Target(Util.OS.OSX, true, true), new NativeFileInfo("darwin-aarch64", "macos-universal", "dylib")
+            new Target(Platform.WINDOWS, true, false), new NativeFileInfo("win32-x86-64", "windows-x86_64", "dll"),
+            new Target(Platform.WINDOWS, false, false), new NativeFileInfo("win32-x86", "window-x86", "dll"),
+            new Target(Platform.LINUX, true, false), new NativeFileInfo("linux-x86-64", "linux-x86_64", "so"),
+            new Target(Platform.LINUX, true, true), new NativeFileInfo("linux-aarch64", "linux-aarch64", "so"),
+            new Target(Platform.MAC, true, false), new NativeFileInfo("darwin-x86-64", "macos-universal", "dylib"),
+            new Target(Platform.MAC, true, true), new NativeFileInfo("darwin-aarch64", "macos-universal", "dylib")
     );
     private static final String NATIVE_LIBRARY_URL = "https://maven.isxander.dev/releases/dev/isxander/libsdl4j-natives/%s/".formatted(SDL3_VERSION);
 
@@ -44,6 +48,8 @@ public class SDL3NativesManager {
     private static boolean attemptedLoad = false;
 
     private static CompletableFuture<Boolean> initFuture;
+
+    private static final ControlifyLogger logger = CUtil.LOGGER.createSubLogger("SDL3NativesManager");
 
     public static CompletableFuture<Boolean> maybeLoad() {
         if (initFuture != null)
@@ -74,7 +80,7 @@ public class SDL3NativesManager {
             // downloadAndStart asynchronously downloads checksum along with lib
             // only download manually here if the lib is already downloaded
             if (Files.notExists(checksumPath)) {
-                CUtil.LOGGER.info("Downloading checksum for existing SDL natives");
+                logger.log("Downloading checksum for existing SDL natives");
                 downloadChecksum(checksumPath);
             }
 
@@ -92,9 +98,21 @@ public class SDL3NativesManager {
             throw new IllegalStateException("Tried to start offline mode but initialization already in progress.");
         }
 
+        String path = "SDL3";
+        if (CUtil.IS_POJAV_LAUNCHER) {
+            logger.log("Detected PojavLauncher.");
+            String nativesFolderName = System.getenv("POJAV_NATIVEDIR");
+            Path libsLocation = Path.of(nativesFolderName).toAbsolutePath();
+            path = libsLocation.resolve("libSDL3.so").toString();
+        }
+
         try {
-            SdlNativeLibraryLoader.loadLibSDL3FromFilePathNow("SDL3");
+            SdlNativeLibraryLoader.loadLibSDL3FromFilePathNow(path);
         } catch (UnsatisfiedLinkError e) {
+            if (CUtil.IS_POJAV_LAUNCHER) {
+                logger.error("Failed to find SDL3, even though PojavLauncher should provide it. Is it up to date?");
+            }
+
             return false;
         }
 
@@ -128,10 +146,19 @@ public class SDL3NativesManager {
     }
 
     private static void startSDL3() {
-        // better rumble
-        SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS3, "1");
-        SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS4_RUMBLE, "1");
-        SDL_SetHint("SDL_JOYSTICK_HIDAPI_STEAMDECK", "1");
+        SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI, "1");
+        SDL_SetHint(SDL_HINT_JOYSTICK_ENHANCED_REPORTS, "1");
+        SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_STEAM, "1");
+        SDL_SetHint(SDL_HINT_JOYSTICK_ROG_CHAKRAM, "1");
+        SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
+        SDL_SetHint(SDL_HINT_JOYSTICK_LINUX_DEADZONES, "1");
+
+        SdlVersionRecord nativesVersion = SdlVersionRecord.fromPacked(SDL_GetVersion());
+        SdlVersionRecord javaVersion = SDL_GetJavaBindingsVersion();
+        logger.log("Loading SDL3 version: {}. Java bindings targeting: {}", nativesVersion, javaVersion);
+        if (!nativesVersion.equals(javaVersion)) {
+            logger.warn("SDL3 NATIVE LIBRARY VERSION MISMATCH! Java bindings are targeting a different version of SDL3 than the loaded native library. This may cause issues.");
+        }
 
         // initialise SDL with just joystick and gamecontroller subsystems
         if (!SDL_Init(SDL_INIT_JOYSTICK | SDL_INIT_GAMEPAD | SDL_INIT_EVENTS | SDL_INIT_AUDIO)) {
@@ -139,7 +166,7 @@ public class SDL3NativesManager {
             throw new RuntimeException("Failed to initialise SDL3: " + SDL_GetError());
         }
 
-        CUtil.LOGGER.info("Initialised SDL4j {}", SDL3_VERSION);
+        logger.log("Successfully initialised SDL subsystems");
     }
 
     private static CompletableFuture<Boolean> downloadAndStart(Path localLibraryPath) {
@@ -198,7 +225,7 @@ public class SDL3NativesManager {
                         return false;
                     }
 
-                    CUtil.LOGGER.debug("Finished downloading SDL3 native library");
+                    CUtil.LOGGER.log("Finished downloading SDL3 native library");
                     minecraft.execute(downloadScreen::finishDownload);
 
                     return verifyMd5(artifactPath, md5Path, true);
@@ -299,15 +326,15 @@ public class SDL3NativesManager {
         return nativesFolderPath.resolve("controlify-natives");
     }
 
-    public record Target(Util.OS os, boolean is64Bit, boolean isARM) {
+    public record Target(Platform platform, boolean is64Bit, boolean isARM) {
         public static final Target CURRENT = Util.make(() -> {
-            Util.OS os = Util.getPlatform();
+            Platform platform = Platform.current();
 
-            String arch = System.getProperty("os.arch");
+            String arch = System.getProperty("platform.arch");
             boolean is64bit = arch.contains("64");
             boolean isARM = arch.contains("arm") || arch.contains("aarch");
 
-            return new Target(os, is64bit, isARM);
+            return new Target(platform, is64bit, isARM);
         });
 
         public boolean hasNativeLibrary() {
@@ -324,7 +351,7 @@ public class SDL3NativesManager {
         }
 
         public String formatted() {
-            return os().name() + " 64bit=" + is64Bit() + ";isARM=" + isARM();
+            return platform().name() + " 64bit=" + is64Bit() + ";isARM=" + isARM();
         }
     }
 

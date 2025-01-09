@@ -7,6 +7,9 @@ import dev.isxander.controlify.controller.battery.PowerState;
 import dev.isxander.controlify.controller.gyro.GyroComponent;
 import dev.isxander.controlify.controller.gyro.GyroState;
 import dev.isxander.controlify.controller.impl.ControllerStateImpl;
+import dev.isxander.controlify.controller.info.DriverNameComponent;
+import dev.isxander.controlify.controller.info.GUIDComponent;
+import dev.isxander.controlify.controller.info.UIDComponent;
 import dev.isxander.controlify.controller.input.GamepadInputs;
 import dev.isxander.controlify.controller.input.InputComponent;
 import dev.isxander.controlify.controller.keyboard.NativeKeyboardComponent;
@@ -14,6 +17,8 @@ import dev.isxander.controlify.controller.steamdeck.SteamDeckComponent;
 import dev.isxander.controlify.controller.touchpad.TouchpadComponent;
 import dev.isxander.controlify.controller.touchpad.Touchpads;
 import dev.isxander.controlify.driver.Driver;
+import dev.isxander.controlify.utils.CUtil;
+import dev.isxander.controlify.utils.log.ControlifyLogger;
 import dev.isxander.deckapi.api.ControllerButton;
 import dev.isxander.deckapi.api.ControllerState;
 import dev.isxander.deckapi.api.SteamDeck;
@@ -23,6 +28,8 @@ import org.joml.Vector2f;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static dev.isxander.controlify.utils.CUtil.*;
@@ -37,10 +44,20 @@ public class SteamDeckDriver implements Driver {
     private TouchpadComponent touchpadComponent;
     private NativeKeyboardComponent keyboardComponent;
 
+    private ControlifyLogger logger;
+
     private final AtomicBoolean runningPoller = new AtomicBoolean(false);
+
+    public SteamDeckDriver(ControlifyLogger logger) {
+        this.logger = logger.createSubLogger("SteamDeckDriver");
+    }
 
     @Override
     public void addComponents(ControllerEntity controller) {
+        controller.setComponent(new DriverNameComponent("Steam Deck"));
+        controller.setComponent(new GUIDComponent("steamdeck"));
+        controller.setComponent(new UIDComponent(CUtil.createUIDFromBytes("steamdeck".getBytes())));
+
         controller.setComponent(
                 this.inputComponent = new InputComponent(
                         controller,
@@ -80,12 +97,28 @@ public class SteamDeckDriver implements Driver {
 
     private void ensurePolling() {
         if (runningPoller.get()) return;
+
+        logger.debugLog("Spinning up poller thread...");
         runningPoller.set(true);
         new Thread(() -> {
-            while (runningPoller.get()) {
-                deck.poll()
-                        .orTimeout(1000, java.util.concurrent.TimeUnit.MILLISECONDS)
-                        .join(); // join into thread so we don't spam the CEF before it's returned a value
+            int failureScore = 0;
+            while (runningPoller.get() && failureScore < 50) {
+                try {
+                    deck.poll()
+                            .orTimeout(1000, java.util.concurrent.TimeUnit.MILLISECONDS)
+                            .join(); // join into thread so we don't spam the CEF before it's returned a value
+                } catch (Throwable e) {
+                    if (e instanceof CompletionException && e.getCause() instanceof TimeoutException) {
+                        // this might be due to the deck going into sleep mode (suspending)
+                        // we ignore, and wait a bit before trying again to avoid useless cpu usage
+                        logger.debugWarn("Encountered timeout exception while polling deck, assuming deck has suspended and waiting...");
+                        CUtil.sleepChecked(500);
+                        failureScore += 1;
+                    } else {
+                        logger.error("Encountered exception while polling deck", e);
+                        failureScore += 10;
+                    }
+                }
             }
         }, "Steam Deck Poller").start();
     }
@@ -189,21 +222,17 @@ public class SteamDeckDriver implements Driver {
     }
 
     @Override
-    public String getDriverName() {
-        return "Steam Deck";
-    }
-
-    @Override
     public void close() {
+        logger.debugLog("Closing driver...");
         try {
             runningPoller.set(false);
             deck.close();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Failed to close driver", e);
         }
     }
 
-    public static Optional<SteamDeckDriver> create() {
+    public static Optional<SteamDeckDriver> create(ControlifyLogger logger) {
         if (triedToLoad || !Controlify.instance().config().globalSettings().useEnhancedSteamDeckDriver)
             return Optional.empty();
 
@@ -211,9 +240,9 @@ public class SteamDeckDriver implements Driver {
 
         try {
             deck = SteamDeckUtil.getDeckInstance().orElseThrow();
-            return Optional.of(new SteamDeckDriver());
+            return Optional.of(new SteamDeckDriver(logger));
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Failed to create Steam Deck driver", e);
             return Optional.empty();
         }
     }

@@ -2,18 +2,21 @@ package dev.isxander.controlify.controllermanager;
 
 import com.google.common.io.ByteStreams;
 import dev.isxander.controlify.controller.ControllerEntity;
-import dev.isxander.controlify.controller.ControllerInfo;
+import dev.isxander.controlify.controller.info.ControllerInfo;
+import dev.isxander.controlify.controller.info.UIDComponent;
 import dev.isxander.controlify.debug.DebugProperties;
+import dev.isxander.controlify.driver.ComponentAdderDriver;
+import dev.isxander.controlify.driver.CompoundDriver;
 import dev.isxander.controlify.driver.Driver;
 import dev.isxander.controlify.driver.glfw.GLFWGamepadDriver;
 import dev.isxander.controlify.driver.glfw.GLFWJoystickDriver;
 import dev.isxander.controlify.driver.steamdeck.SteamDeckDriver;
-import dev.isxander.controlify.driver.steamdeck.SteamDeckMode;
 import dev.isxander.controlify.driver.steamdeck.SteamDeckUtil;
 import dev.isxander.controlify.hid.ControllerHIDService;
 import dev.isxander.controlify.hid.HIDDevice;
 import dev.isxander.controlify.hid.HIDIdentifier;
 import dev.isxander.controlify.utils.CUtil;
+import dev.isxander.controlify.utils.log.ControlifyLogger;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceProvider;
 import org.lwjgl.glfw.GLFW;
@@ -29,7 +32,8 @@ import java.util.stream.IntStream;
 public class GLFWControllerManager extends AbstractControllerManager {
     private boolean steamDeckConsumed = false;
 
-    public GLFWControllerManager() {
+    public GLFWControllerManager(ControlifyLogger logger) {
+        super(logger);
         this.setupCallbacks();
     }
 
@@ -63,13 +67,9 @@ public class GLFWControllerManager extends AbstractControllerManager {
     }
 
     @Override
-    protected Optional<ControllerEntity> createController(UniqueControllerID ucid, ControllerHIDService.ControllerHIDInfo hidInfo) {
+    protected Optional<ControllerEntity> createController(UniqueControllerID ucid, ControllerHIDService.ControllerHIDInfo hidInfo, ControlifyLogger controllerLogger) {
         int jid = ((GLFWUniqueControllerID) ucid).jid;
 
-        Optional<HIDIdentifier> hid = hidInfo.hidDevice().map(HIDDevice::asIdentifier);
-        String uid = hidInfo.createControllerUID(
-                this.getControllerCountWithMatchingHID(hid.orElse(null))
-        ).orElse("unknown-uid-" + ucid);
         boolean isGamepad = isControllerGamepad(ucid) && !DebugProperties.FORCE_JOYSTICK;
 
         List<Driver> drivers = new ArrayList<>();
@@ -77,7 +77,7 @@ public class GLFWControllerManager extends AbstractControllerManager {
             && !steamDeckConsumed
             && hidInfo.type().namespace().equals(SteamDeckUtil.STEAM_DECK_NAMESPACE)
         ) {
-            Optional<SteamDeckDriver> steamDeckDriver = SteamDeckDriver.create();
+            Optional<SteamDeckDriver> steamDeckDriver = SteamDeckDriver.create(controllerLogger);
             if (steamDeckDriver.isPresent()) {
                 drivers.add(steamDeckDriver.get());
                 steamDeckConsumed = true;
@@ -90,10 +90,20 @@ public class GLFWControllerManager extends AbstractControllerManager {
             drivers.add(new GLFWJoystickDriver(jid));
         }
 
-        String name = drivers.get(0).getDriverName();
-        String guid = GLFW.glfwGetJoystickGUID(jid);
-        ControllerInfo info = new ControllerInfo(uid, ucid, guid, name, hidInfo.type(), hidInfo.hidDevice());
-        ControllerEntity controller = new ControllerEntity(info, drivers);
+        Optional<HIDIdentifier> hid = hidInfo.hidDevice().map(HIDDevice::asIdentifier);
+        String uid = hidInfo.createControllerUID(
+                this.getControllerCountWithMatchingHID(hid.orElse(null))
+        ).orElse("unknown-uid-" + ucid);
+        // to save giving GLFW drivers the HID info, we'll just add the UID component here at the very
+        // bottom of the driver priority list
+        drivers.add(new ComponentAdderDriver(controller -> {
+            controller.setComponent(new UIDComponent(uid));
+        }));
+
+        CompoundDriver compoundDriver = new CompoundDriver(drivers);
+
+        ControllerInfo info = new ControllerInfo(ucid, hidInfo.type(), hidInfo.hidDevice());
+        ControllerEntity controller = new ControllerEntity(info, compoundDriver, controllerLogger);
 
         addController(ucid, controller);
         return Optional.of(controller);
@@ -106,7 +116,7 @@ public class GLFWControllerManager extends AbstractControllerManager {
 
     @Override
     protected void loadGamepadMappings(ResourceProvider resourceProvider) {
-        CUtil.LOGGER.debug("Loading gamepad mappings...");
+        CUtil.LOGGER.debugLog("Loading gamepad mappings...");
 
         // GLFW uses SDL2 format
         Optional<Resource> resourceOpt = resourceProvider

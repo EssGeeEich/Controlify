@@ -47,8 +47,8 @@ public class DebugDump {
             for (ControllerEntity controller : controllerManager.getConnectedControllers()) {
                 dump.line("Name: ", controller.name());
                 dump.line("Identified type: ", controller.info().type());
-                dump.line("GUID: ", controller.info().guid());
-                dump.line("UID: ", controller.info().uid());
+                dump.line("GUID: ", controller.guid());
+                dump.line("UID: ", controller.uid());
                 dump.line("UCID: ", controller.info().ucid());
                 controller.info().hid().ifPresent(hid -> dump.line("HID: ", hid.asIdentifier()));
 
@@ -79,6 +79,7 @@ public class DebugDump {
                 dump.line("Gyro supported: ", controller.gyro().isPresent());
                 dump.line("Touchpads supported: ", controller.touchpad().map(touchpad -> touchpad.touchpads().length).orElse(0));
                 dump.line("HD haptics supported: ", controller.hdHaptics().isPresent());
+                dump.line("Log:").pushIndent().line(controller.getLogger().export()).popIndent();
 
                 dump.line();
             }
@@ -93,19 +94,24 @@ public class DebugDump {
         public IndentedStringBuilder line(Object... parts) {
             sb.append("  ".repeat(indent));
             for (Object part : parts) {
-                sb.append(part);
+                String stringified = part.toString()
+                        .replace("\n", "\n" + "  ".repeat(indent));
+
+                sb.append(stringified);
             }
             sb.append('\n');
 
             return this;
         }
 
-        public void pushIndent() {
+        public IndentedStringBuilder pushIndent() {
             indent++;
+            return this;
         }
 
-        public void popIndent() {
+        public IndentedStringBuilder popIndent() {
             indent--;
+            return this;
         }
 
         public String build() {

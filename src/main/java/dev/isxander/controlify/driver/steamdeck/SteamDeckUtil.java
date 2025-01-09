@@ -52,10 +52,10 @@ public final class SteamDeckUtil {
 
     private static boolean isHardwareSteamDeck() {
         // even if "Linux" isn't a defacto way to check for all linux distros, it's the value returned on a steam deck
-        boolean isLinux = "Linux".equals(System.getProperty("os.name"));
+        boolean isLinux = "Linux".equals(System.getProperty("platform.name"));
         if (!isLinux) return false;
 
-        String kernelVersion = System.getProperty("os.version");
+        String kernelVersion = System.getProperty("platform.version");
         // steam decks use a special kernel from valve
         // this check is not used because i believe the board information is more reliable
         // as i'm not sure if it's common for people to use other kernels on steam decks

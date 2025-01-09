@@ -1,40 +1,44 @@
 package dev.isxander.controlify.driver.glfw;
 
-import dev.isxander.controlify.controller.id.ControllerType;
+import dev.isxander.controlify.controller.info.DriverNameComponent;
+import dev.isxander.controlify.controller.info.GUIDComponent;
 import dev.isxander.controlify.controller.input.GamepadInputs;
 import dev.isxander.controlify.controller.ControllerEntity;
-import dev.isxander.controlify.controller.ControllerInfo;
 import dev.isxander.controlify.controller.input.InputComponent;
 import dev.isxander.controlify.controller.impl.ControllerStateImpl;
-import dev.isxander.controlify.controllermanager.UniqueControllerID;
 import dev.isxander.controlify.driver.Driver;
-import dev.isxander.controlify.hid.HIDDevice;
-import dev.isxander.controlify.hid.HIDIdentifier;
 import net.minecraft.util.Mth;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWGamepadState;
-
-import java.util.Optional;
 
 import static org.lwjgl.glfw.GLFW.*;
 
 public class GLFWGamepadDriver implements Driver {
     private final int jid;
     private final String guid;
+    private final String name;
 
     private InputComponent inputComponent;
 
     public GLFWGamepadDriver(int jid) {
         this.jid = jid;
         this.guid = glfwGetJoystickGUID(jid);
+        this.name = glfwGetGamepadName(jid);
 
         this.getGamepadState(); // test input ability so the create catches it
     }
 
     @Override
     public void addComponents(ControllerEntity controller) {
-        controller.setComponent(this.inputComponent = new InputComponent(controller, 15, 10, 0, true, GamepadInputs.DEADZONE_GROUPS, controller.info().type().mappingId()));
+        controller.setComponent(new DriverNameComponent(this.name));
+        controller.setComponent(new GUIDComponent(this.guid));
 
+        controller.setComponent(this.inputComponent = new InputComponent(
+                controller, 15, 10, 0,
+                true,
+                GamepadInputs.DEADZONE_GROUPS,
+                controller.info().type().mappingId()
+        ));
     }
 
     @Override
@@ -47,10 +51,6 @@ public class GLFWGamepadDriver implements Driver {
 
     }
 
-    @Override
-    public String getDriverName() {
-        return glfwGetGamepadName(jid);
-    }
 
     private void updateInput() {
         GLFWGamepadState glfwState = this.getGamepadState();

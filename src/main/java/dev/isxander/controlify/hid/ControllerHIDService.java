@@ -67,7 +67,7 @@ public class ControllerHIDService {
         if (DebugProperties.PRINT_VID_PID) {
             info.hidDevice.ifPresent(hid -> {
                 var hex = HexFormat.of().withPrefix("0x");
-                CUtil.LOGGER.info("VID: {}, PID: {}", hex.toHexDigits(hid.vendorId()), hex.toHexDigits(hid.productId()));
+                CUtil.LOGGER.log("VID: {}, PID: {}", hex.toHexDigits(hid.vendorId()), hex.toHexDigits(hid.productId()));
             });
         }
 
