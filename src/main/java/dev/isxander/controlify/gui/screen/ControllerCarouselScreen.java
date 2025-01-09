@@ -376,7 +376,7 @@ public class ControllerCarouselScreen extends Screen implements ScreenController
 
         @Override
         public boolean mouseClicked(double mouseX, double mouseY, int button) {
-            if (mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height) {
+            if (isMouseOver(mouseX, mouseY)) {
                 int index = carouselEntries.indexOf(this);
                 if (index != carouselIndex) {
                     if (carouselAnimation == null || carouselAnimation.isDone())
@@ -387,6 +387,11 @@ public class ControllerCarouselScreen extends Screen implements ScreenController
             }
 
             return super.mouseClicked(mouseX, mouseY, button);
+        }
+
+        @Override
+        public boolean isMouseOver(double mouseX, double mouseY) {
+            return mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height;
         }
 
         @Override
