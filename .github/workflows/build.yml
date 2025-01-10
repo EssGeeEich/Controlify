@@ -50,7 +50,7 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
       - name: Switch sources to version ${{ matrix.target }}
-        run: ./gradlew buildAndCollectActive --stacktrace
+        run: ./gradlew "Refresh active project" buildAndCollectActive --stacktrace
         env:
           CI_SINGLE_BUILD: ${{ matrix.target }}
       - uses: actions/upload-artifact@v4
