@@ -1,7 +1,6 @@
 package dev.isxander.controlify.utils.log;
 
 import net.minecraft.CrashReport;
-import net.minecraft.ReportType;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Queue;
@@ -132,7 +131,7 @@ public abstract class AbstractControlifyLogger implements ControlifyLogger {
 
     @Override
     public void crashReport(CrashReport report) {
-        debugError(report.getFriendlyReport(ReportType.CRASH));
+        debugError(report.getFriendlyReport(/*? if >=1.21 {*/ net.minecraft.ReportType.CRASH /*?}*/));
     }
 
     @Override
