@@ -1,0 +1,59 @@
+name: Gradle CI (new)
+
+on:
+  push:
+    paths-ignore:
+      - 'README.md'
+      - 'LICENSE'
+      - '.gitignore'
+      - '.editorconfig'
+      - 'changelog.md'
+      - 'mod-comparison.md'
+    pull_request:
+
+jobs:
+  retrieve-versions:
+    runs-on: ubuntu-latest
+    name: Retrieve versions
+
+    outputs:
+      versions: ${{ steps.get-versions.outputs.versions }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get potential versions
+        id: get-versions
+        run: |
+          VERSIONS=$(ls -d versions/*/ | xargs -n 1 basename | jq -R . | jq -s .)
+          echo "versions=$VERSIONS" >> $GITHUB_ENV
+
+  build:
+    needs: retrieve-versions
+    runs-on: ubuntu-latest
+    name: Build with gradle
+
+    # Folders in versions folder may not be registered in gradle,
+    # which will make this build fail. This is why we ignore errors.
+    continue-on-error: true
+
+    strategy:
+      matrix:
+        version: ${{ fromJson(needs.retrieve-versions.outputs.versions) }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+        java-version: 21
+        distribution: temurin
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+      - name: Switch sources to version ${{ matrix.version }}
+        run: ./gradlew "Set active project to ${{ matrix.version }}"
+      - name: Build with gradle
+        run: ./gradlew buildAndCollectActive --stacktrace
+      - uses: actions/upload-artifact@v4
+        with:
+          path: build/finalJars/*.jar
+          name: ${{ matrix.version }}
