@@ -24,7 +24,7 @@ jobs:
       - name: Get potential versions
         id: get-versions
         run: |
-          VERSIONS=$(ls -d versions/*/ | xargs -n 1 basename | jq -R . | jq -s .)
+          VERSIONS=$(ls -d versions/*/ | xargs -n 1 basename | jq -R . | jq -sc .)
           echo "versions=$VERSIONS" >> $GITHUB_ENV
 
   build:
