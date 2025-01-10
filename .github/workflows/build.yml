@@ -24,18 +24,8 @@ jobs:
       - name: Get potential versions
         id: get-targets
         run: |
-          ls versions/
           TARGETS=$(ls -d versions/*/ | xargs -n 1 basename | jq -Rc [inputs])
-          echo $TARGETS
-          echo "targets=$TARGETS" >> $GITHUB_ENV
-
-  test:
-    needs: retrieve-targets
-    runs-on: ubuntu-latest
-
-    steps:
-      - run: echo ${{ needs.retrieve-targets.outputs.targets }}
-#      - run: echo ${{ fromJson(needs.retrieve-targets.outputs.targets) }}
+          echo "targets=$TARGETS" >> $GITHUB_OUTPUT
 
   build:
     needs: retrieve-targets
