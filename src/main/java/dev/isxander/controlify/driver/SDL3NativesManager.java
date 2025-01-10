@@ -33,7 +33,7 @@ import static dev.isxander.sdl3java.api.hints.SdlHintConsts.*;
 import static dev.isxander.sdl3java.api.version.SdlVersion.*;
 
 public class SDL3NativesManager {
-    private static final String SDL3_VERSION = SDL_GetJavaBindingsVersion() + "." + SdlVersionConst.SDL_COMMIT;
+    private static final String SDL3_VERSION = getJavaBindingsVersion() + "." + SdlVersionConst.SDL_COMMIT;
     private static final Map<Target, NativeFileInfo> NATIVE_LIBRARIES = Map.of(
             new Target(Platform.WINDOWS, true, false), new NativeFileInfo("win32-x86-64", "windows-x86_64", "dll"),
             new Target(Platform.WINDOWS, false, false), new NativeFileInfo("win32-x86", "window-x86", "dll"),
@@ -324,6 +324,14 @@ public class SDL3NativesManager {
             }
         }
         return nativesFolderPath.resolve("controlify-natives");
+    }
+
+    private static SdlVersionRecord getJavaBindingsVersion() {
+        return new SdlVersionRecord(
+                SdlVersionConst.SDL_MAJOR_VERSION,
+                SdlVersionConst.SDL_MINOR_VERSION,
+                SdlVersionConst.SDL_MICRO_VERSION
+        );
     }
 
     public record Target(Platform platform, boolean is64Bit, boolean isARM) {
