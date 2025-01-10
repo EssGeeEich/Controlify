@@ -38,7 +38,7 @@ jobs:
 #      - run: echo ${{ fromJson(needs.retrieve-targets.outputs.targets) }}
 
   build:
-    needs: retrieve-versions
+    needs: retrieve-targets
     runs-on: ubuntu-latest
     name: Build with gradle
 
