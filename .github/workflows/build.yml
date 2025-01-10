@@ -12,22 +12,30 @@ on:
     pull_request:
 
 jobs:
-  retrieve-versions:
+  retrieve-targets:
     runs-on: ubuntu-latest
-    name: Retrieve versions
+    name: Retrieve targets
 
     outputs:
-      versions: ${{ steps.get-versions.outputs.versions }}
+      targets: ${{ steps.get-targets.outputs.targets }}
 
     steps:
       - uses: actions/checkout@v4
       - name: Get potential versions
-        id: get-versions
+        id: get-targets
         run: |
           ls versions/
-          VERSIONS=$(ls -d versions/*/ | xargs -n 1 basename | jq -Rc [inputs])
-          echo $VERSIONS
-          echo "versions=$VERSIONS" >> $GITHUB_ENV
+          TARGETS=$(ls -d versions/*/ | xargs -n 1 basename | jq -Rc [inputs])
+          echo $TARGETS
+          echo "targets=$TARGETS" >> $GITHUB_ENV
+
+  test:
+    needs: retrieve-targets
+    runs-on: ubuntu-latest
+
+    steps:
+      - run: echo ${{ needs.retrieve-targets.outputs.targets }}
+#      - run: echo ${{ fromJson(needs.retrieve-targets.outputs.targets) }}
 
   build:
     needs: retrieve-versions
@@ -40,7 +48,7 @@ jobs:
 
     strategy:
       matrix:
-        version: ${{ fromJson(needs.retrieve-versions.outputs.versions) }}
+        target: ${{ fromJson(needs.retrieve-targets.outputs.targets) }}
 
     steps:
       - uses: actions/checkout@v4
@@ -51,11 +59,11 @@ jobs:
           distribution: temurin
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
-      - name: Switch sources to version ${{ matrix.version }}
-        run: ./gradlew "Set active project to ${{ matrix.version }}"
+      - name: Switch sources to version ${{ matrix.target }}
+        run: ./gradlew "Set active project to ${{ matrix.target }}"
       - name: Build with gradle
         run: ./gradlew buildAndCollectActive --stacktrace
       - uses: actions/upload-artifact@v4
         with:
           path: build/finalJars/*.jar
-          name: ${{ matrix.version }}
+          name: ${{ matrix.target }}
