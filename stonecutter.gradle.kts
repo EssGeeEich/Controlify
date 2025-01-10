@@ -7,7 +7,13 @@ plugins {
     id("dev.kikugie.stonecutter")
     id("de.undercouch.download") version "5.6.0"
 }
+
+val ciSingleBuild: String? = System.getenv("CI_SINGLE_BUILD")
+if (ciSingleBuild != null) {
+    stonecutter active ciSingleBuild
+} else {
 stonecutter active "1.21.4-fabric" /* [SC] DO NOT EDIT */
+}
 
 fun registerChiseled(task: String, action: ChiseledTask.() -> Unit = {}): TaskProvider<ChiseledTask> {
     return tasks.register(
