@@ -1,5 +1,6 @@
 package dev.isxander.controlify.mixins.core;
 
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import dev.isxander.controlify.Controlify;
 import dev.isxander.controlify.InputMode;
 import dev.isxander.controlify.api.ControlifyApi;
@@ -78,6 +79,11 @@ public class MouseHandlerMixin implements MouseMinecraftCallNotifier {
     @Inject(method = "releaseMouse", at = @At(value = "RETURN"))
     private void resetCalledFromMinecraftSetScreen(CallbackInfo ci) {
         controlify$calledFromMinecraftSetScreen = false;
+    }
+
+    @ModifyExpressionValue(method = "grabMouse", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Minecraft;isWindowActive()Z"))
+    private boolean passWindowActiveCheckIfOOFInputIsOn(boolean isWindowActive) {
+        return isWindowActive || (ControlifyApi.get().currentInputMode().isController() && Controlify.instance().config().globalSettings().outOfFocusInput);
     }
 
     @Override
