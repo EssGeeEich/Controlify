@@ -30,6 +30,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Input;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
@@ -310,7 +311,7 @@ public class InGameInputHandler {
         impulseX *= config.hLookSensitivity * 10f; // 10 degrees per second at 100% sensitivity
         impulseY *= config.vLookSensitivity * 10f;
 
-        if (config.reduceAimingSensitivity && player.isUsingItem()) {
+        if (config.reduceAimingSensitivity && player.isUsingItem() && !controller.genericConfig().config().isLCE) {
             float aimMultiplier = switch (player.getUseItem().getUseAnimation()) {
                 case BOW, SPEAR -> 0.6f;
                 case SPYGLASS -> 0.2f;
@@ -389,8 +390,27 @@ public class InGameInputHandler {
 
     public void processPlayerLook(float deltaTime) {
         if (minecraft.player != null) {
-            minecraft.player.turn(lookInputX / 0.15f * deltaTime, lookInputY / 0.15f * deltaTime);
+            if (!controller.genericConfig().config().isLCE || gyroToggledOn) {
+                minecraft.player.turn(lookInputX / 0.15f * deltaTime, lookInputY / 0.15f * deltaTime);
+            } else {
+                double x = convertAxis(controller.input().get().confObj().vLookSensitivity);
+                double y = convertAxis(controller.input().get().confObj().hLookSensitivity);
+                minecraft.player.turn((-convertSmooth(lookInputX) * x) / 27.5,(-convertSmooth(lookInputY) * y) / 27.5);
+            }
         }
+    }
+
+    public double convertAxis(float sensitivity) {
+        return Math.pow(sensitivity * (double)0.6f + (double)0.2f,3) * 7.5f * (minecraft.player.isScoping() && controller.genericConfig().config().isLCE ? 0.125: 1.0);
+    }
+
+    public double convertSmooth(double lookInput) {
+        double deadzone = controller.input().get().confObj().deadzones.size();
+        return square((lookInput > deadzone ? lookInput - deadzone : lookInput < -deadzone ? lookInput + deadzone : 0)  / (1 - deadzone));
+    }
+
+    public static double square(double f){
+        return f * f * Math.signum(f);
     }
 
     public boolean shouldShowPlayerList() {

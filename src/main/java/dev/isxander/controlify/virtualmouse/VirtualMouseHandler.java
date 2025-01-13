@@ -1,5 +1,6 @@
 package dev.isxander.controlify.virtualmouse;
 
+import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.datafixers.util.Pair;
 import dev.isxander.controlify.Controlify;
@@ -55,7 +56,6 @@ public class VirtualMouseHandler {
 
     public VirtualMouseHandler() {
         this.minecraft = Minecraft.getInstance();
-
         if (minecraft.screen != null && minecraft.screen instanceof ISnapBehaviour snapBehaviour)
             snapPoints = snapBehaviour.getSnapPoints();
         else
@@ -136,13 +136,22 @@ public class VirtualMouseHandler {
         var sensitivity = input.config().config().virtualMouseSensitivity;
         var windowSizeModifier = Math.max(minecraft.getWindow().getWidth(), minecraft.getWindow().getHeight()) / 800f;
 
-        // cubic function to make small movements smaller
-        // abs to keep sign
-        targetX += impulse.x * 20f * sensitivity * windowSizeModifier;
-        targetY += impulse.y * 20f * sensitivity * windowSizeModifier;
+        if (!Controlify.instance().getCurrentController().get().genericConfig().config().isLCE) {
+            // cubic function to make small movements smaller
+            // abs to keep sign
+            targetX += impulse.x * 20f * sensitivity * windowSizeModifier;
+            targetY += impulse.y * 20f * sensitivity * windowSizeModifier;
 
-        targetX = Mth.clamp(targetX, 0, minecraft.getWindow().getWidth());
-        targetY = Mth.clamp(targetY, 0, minecraft.getWindow().getHeight());
+            targetX = Mth.clamp(targetX, 0, minecraft.getWindow().getWidth());
+            targetY = Mth.clamp(targetY, 0, minecraft.getWindow().getHeight());
+
+        } else {
+            targetX += impulse.x * ((double) minecraft.getWindow().getScreenWidth() / minecraft.getWindow().getGuiScaledWidth()) * (sensitivity) * 10f;
+            targetY += impulse.y * ((double) minecraft.getWindow().getScreenHeight() / minecraft.getWindow().getGuiScaledHeight()) * (sensitivity) * 10f;
+
+            targetX = Mth.clamp(targetX, 0, minecraft.getWindow().getWidth());
+            targetY = Mth.clamp(targetY, 0, minecraft.getWindow().getHeight());
+        }
 
         scrollY += ControlifyBindings.VMOUSE_SCROLL_UP.on(controller).analogueNow()
                 - ControlifyBindings.VMOUSE_SCROLL_DOWN.on(controller).analogueNow();

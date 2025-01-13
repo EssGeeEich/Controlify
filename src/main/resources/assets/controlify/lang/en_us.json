@@ -1,6 +1,9 @@
 {
   "controlify.placeholder": "%1$s",
 
+  "controlify.gui.is_lce": "LCE Style Controls",
+  "controlify.gui.is_lce.tooltip": "Makes the controller feeling similar to the Legacy Console Edition.",
+
   "controlify.gui.carousel.title": "Controllers",
   "controlify.gui.carousel.no_controllers": "No controllers connected.",
   "controlify.gui.carousel.entry.settings": "Settings",
