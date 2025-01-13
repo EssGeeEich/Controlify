@@ -7,6 +7,7 @@ import dev.isxander.controlify.controller.ControllerEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.KeyboardInput;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.phys.Vec2;
 import org.jetbrains.annotations.Nullable;
 //? if >=1.21.2 {
 import net.minecraft.client.player.ClientInput;
@@ -32,8 +33,7 @@ public class ControllerPlayerMovement extends /*? if >=1.21.2 {*/ ClientInput /*
     /*public void tick(boolean slowDown, float movementMultiplier) {
     *///?}
         if (Minecraft.getInstance().screen != null || player == null) {
-            this.leftImpulse = 0;
-            this.forwardImpulse = 0;
+            this.setMoveVec(0, 0);
 
             //? if >=1.21.2 {
             this.keyPresses = Input.EMPTY;
@@ -49,16 +49,16 @@ public class ControllerPlayerMovement extends /*? if >=1.21.2 {*/ ClientInput /*
             return;
         }
 
-        this.forwardImpulse = ControlifyBindings.WALK_FORWARD.on(controller).analogueNow()
+        float forwardImpulse = ControlifyBindings.WALK_FORWARD.on(controller).analogueNow()
                 - ControlifyBindings.WALK_BACKWARD.on(controller).analogueNow();
-        this.leftImpulse = ControlifyBindings.WALK_LEFT.on(controller).analogueNow()
+        float leftImpulse = ControlifyBindings.WALK_LEFT.on(controller).analogueNow()
                 - ControlifyBindings.WALK_RIGHT.on(controller).analogueNow();
 
         if (Controlify.instance().config().globalSettings().shouldUseKeyboardMovement()) {
             float threshold = controller.input().orElseThrow().confObj().buttonActivationThreshold;
 
-            this.forwardImpulse = Math.abs(this.forwardImpulse) >= threshold ? Math.copySign(1, this.forwardImpulse) : 0;
-            this.leftImpulse = Math.abs(this.leftImpulse) >= threshold ? Math.copySign(1, this.leftImpulse) : 0;
+            forwardImpulse = Math.abs(forwardImpulse) >= threshold ? Math.copySign(1, forwardImpulse) : 0;
+            leftImpulse = Math.abs(leftImpulse) >= threshold ? Math.copySign(1, leftImpulse) : 0;
         }
 
         //? if >=1.21.2 {
@@ -67,18 +67,19 @@ public class ControllerPlayerMovement extends /*? if >=1.21.2 {*/ ClientInput /*
         boolean jumping = keyPresses.jump();
         //?}
 
-        up = this.forwardImpulse > 0;
-        down = this.forwardImpulse < 0;
-        left = this.leftImpulse > 0;
-        right = this.leftImpulse < 0;
+        up = forwardImpulse > 0;
+        down = forwardImpulse < 0;
+        left = leftImpulse > 0;
+        right = leftImpulse < 0;
 
         //? if >=1.21.4 {
         //?} else {
         /*if (slowDown) {
-            this.leftImpulse *= movementMultiplier;
-            this.forwardImpulse *= movementMultiplier;
+            leftImpulse *= movementMultiplier;
+            forwardImpulse *= movementMultiplier;
         }
         *///?}
+        this.setMoveVec(forwardImpulse, leftImpulse);
 
         // this over-complication is so exiting a GUI with the button still held doesn't trigger a jump.
         InputBinding jump = ControlifyBindings.JUMP.on(controller);
@@ -110,6 +111,15 @@ public class ControllerPlayerMovement extends /*? if >=1.21.2 {*/ ClientInput /*
 
         this.wasFlying = player.getAbilities().flying;
         this.wasPassenger = player.isPassenger();
+    }
+
+    private void setMoveVec(float forward, float left) {
+        //? if >=1.21.5 {
+        /*this.moveVector = new Vec2(left, forward);
+        *///?} else {
+        this.forwardImpulse = forward;
+        this.leftImpulse = left;
+        //?}
     }
 
     public static void updatePlayerInput(@Nullable LocalPlayer player) {

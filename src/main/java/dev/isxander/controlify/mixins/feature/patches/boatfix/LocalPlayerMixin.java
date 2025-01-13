@@ -5,11 +5,13 @@ import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import dev.isxander.controlify.Controlify;
 import dev.isxander.controlify.api.ControlifyApi;
 import dev.isxander.controlify.fixes.boatfix.AnalogBoatInput;
+import dev.isxander.controlify.ingame.InGameInputHandler;
 import dev.isxander.controlify.utils.CUtil;
 import dev.isxander.controlify.utils.MthExt;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.vehicle.Boat;
+import net.minecraft.world.phys.Vec2;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -43,8 +45,9 @@ public class LocalPlayerMixin {
             Operation<Void> original
     ) {
         if (ControlifyApi.get().currentInputMode().isController() && !Controlify.instance().config().globalSettings().shouldUseKeyboardMovement()) {
-            float forwardImpulse = input.forwardImpulse;
-            float rightImpulse = -input.leftImpulse;
+            Vec2 moveVec = InGameInputHandler.getMoveVec(input);
+            float forwardImpulse = moveVec.y;
+            float rightImpulse = -moveVec.x;
 
             // Add a deadzone to the analog input. Right impulse between -0.1 and 0.1 is considered 0.
             // Other values are remapped to remap [0.1, 1] to [0, 1] and [-1, -0.1] to [-1, 0].

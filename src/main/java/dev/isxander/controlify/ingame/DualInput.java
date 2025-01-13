@@ -1,6 +1,7 @@
 package dev.isxander.controlify.ingame;
 
 import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec2;
 import org.apache.commons.lang3.Validate;
 
 //? if >=1.21.2 {
@@ -45,8 +46,12 @@ public class DualInput extends /*? if >=1.21.2 {*/ ClientInput /*?} else {*/ /*I
         input2.tick(slowDown, movementMultiplier);
         *///?}
 
-        this.leftImpulse = Mth.clamp(input1.leftImpulse + input2.leftImpulse, -1, 1);
-        this.forwardImpulse = Mth.clamp(input1.forwardImpulse + input2.forwardImpulse, -1, 1);
+        Vec2 input1MoveVec = InGameInputHandler.getMoveVec(input1);
+        Vec2 input2MoveVec = InGameInputHandler.getMoveVec(input2);
+        this.setMoveVec(
+                Mth.clamp(input1MoveVec.y + input2MoveVec.y, -1, 1),
+                Mth.clamp(input1MoveVec.x + input2MoveVec.x, -1, 1)
+        );
 
         //? if >=1.21.2 {
         Input input1 = this.input1.keyPresses;
@@ -68,5 +73,14 @@ public class DualInput extends /*? if >=1.21.2 {*/ ClientInput /*?} else {*/ /*I
         this.jumping = input1.jumping || input2.jumping;
         this.shiftKeyDown = input1.shiftKeyDown || input2.shiftKeyDown;
         *///?}
+    }
+
+    private void setMoveVec(float forward, float left) {
+        //? if >=1.21.5 {
+        /*this.moveVector = new Vec2(left, forward);
+        *///?} else {
+        this.forwardImpulse = forward;
+        this.leftImpulse = left;
+        //?}
     }
 }

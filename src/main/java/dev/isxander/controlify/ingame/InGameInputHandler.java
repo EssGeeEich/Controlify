@@ -32,6 +32,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector2f;
 import org.joml.Vector2fc;
@@ -237,7 +238,7 @@ public class InGameInputHandler {
             ));
         }
 
-        if (this.minecraft.gameMode.hasInfiniteItems()) {
+        if (/*? if >=1.21.5 {*/ /*minecraft.player.hasInfiniteMaterials() *//*?} else {*/ this.minecraft.gameMode.hasInfiniteItems() /*?}*/) {
             if (ControlifyBindings.HOTBAR_LOAD_RADIAL.on(controller).justPressed()) {
                 minecraft.setScreen(new RadialMenuScreen(
                         controller,
@@ -441,7 +442,8 @@ public class InGameInputHandler {
             if (!shiftKeyDown)
                 y = Math.max(y, 0);
 
-            if (player.input.forwardImpulse == 0 && player.input.leftImpulse == 0) {
+            Vec2 moveVec = getMoveVec(player.input);
+            if (moveVec.x == 0 && moveVec.y == 0) {
                 x = 0;
                 z = 0;
             }
@@ -464,5 +466,19 @@ public class InGameInputHandler {
         boolean playerExists = minecraft.player != null;
 
         return !mouseNotGrabbed && !outOfFocus && !screenVisible && playerExists;
+    }
+
+    public static Vec2 getMoveVec(
+            //? if >=1.21.2 {
+            net.minecraft.client.player.ClientInput input
+            //?} else {
+            /*net.minecraft.client.player.Input input
+            *///?}
+    ) {
+        //? if >=1.21.5 {
+        /*return input.getMoveVector();
+        *///?} else {
+        return new Vec2(input.leftImpulse, input.forwardImpulse);
+        //?}
     }
 }
