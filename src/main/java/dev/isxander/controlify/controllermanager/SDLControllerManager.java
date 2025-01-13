@@ -244,24 +244,6 @@ public class SDLControllerManager extends AbstractControllerManager {
         return Optional.empty();
     }
 
-    private static Optional<String> useSerialForUID(@Nullable String serial, Optional<HIDIdentifier> hid) {
-        if (serial != null && !serial.isEmpty()) {
-            String uid = "";
-            if (hid.isPresent()) {
-                var hex = HexFormat.of();
-                HIDIdentifier hidIdentifier = hid.get();
-                uid = "V"
-                      + hex.toHexDigits(hidIdentifier.vendorId(), 4).toUpperCase()
-                      + "-P"
-                      + hex.toHexDigits(hidIdentifier.productId(), 4).toUpperCase()
-                      + "-";
-            }
-            uid += "SN" + serial.toUpperCase();
-            return Optional.of(uid);
-        }
-        return Optional.empty();
-    }
-
     public record SDLUniqueControllerID(@NotNull SDL_JoystickID jid) implements UniqueControllerID {
         @Override
         public boolean equals(Object obj) {
