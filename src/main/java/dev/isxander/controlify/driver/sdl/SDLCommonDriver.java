@@ -436,7 +436,6 @@ public abstract class SDLCommonDriver<SDL_Controller> implements Driver {
             if (!SDL_SetAudioStreamOutputChannelMap(stream, channelMap)) {
                 System.out.println(SDL_GetError());
             }
-            System.out.println(Arrays.toString(SDL_GetAudioStreamOutputChannelMap(stream)));
 
             var handle = new AudioStreamHandle(stream, audioSpec);
             handle.queueAudio(audio, tickLength);

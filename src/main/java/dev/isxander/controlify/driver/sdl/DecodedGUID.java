@@ -39,7 +39,6 @@ public record DecodedGUID(
     }
 
     public static DecodedGUID fromBytes(byte[] guid) {
-        System.out.println(Arrays.toString(guid));
         Validate.isTrue(guid.length == 16, "GUID must be 16 bytes long");
 
         short bus = readShortLE(guid, 0);

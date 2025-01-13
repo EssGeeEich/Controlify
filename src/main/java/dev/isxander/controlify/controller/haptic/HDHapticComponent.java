@@ -91,8 +91,6 @@ public class HDHapticComponent implements ECSComponent, ConfigHolder<HDHapticCom
 
                     bytes.get(audio);
 
-                    System.out.println("Audio: " + Arrays.toString(audio));
-
                     return new CompleteSoundData(audio, format);
                 });
     }

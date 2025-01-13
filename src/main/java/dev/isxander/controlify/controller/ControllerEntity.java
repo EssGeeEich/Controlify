@@ -198,10 +198,4 @@ public class ControllerEntity extends ECSEntityImpl {
     public ControlifyLogger getLogger() {
         return logger;
     }
-
-    @Override
-    public <T extends ECSComponent> boolean setComponent(T component) {
-        logger.debugLog("Adding component: {}", component.id());
-        return super.setComponent(component);
-    }
 }
