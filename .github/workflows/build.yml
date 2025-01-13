@@ -28,7 +28,6 @@ jobs:
         run: |
           TARGETS=$(jq -c '[.builds | to_entries[] | .value.platforms[] as $platform | "\(.key)-\($platform)"]' ./versions/builds.json)
           echo "targets=$TARGETS" >> $GITHUB_OUTPUT
-        working-directory: versions
 
   build:
     needs: retrieve-targets
