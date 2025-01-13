@@ -26,7 +26,12 @@ val versionWithoutMC = property("modVersion")!!.toString()
 
 modstitch {
     minecraftVersion = mcVersion
-    javaTarget = 17 // lowest common denominator
+
+    // ideally, we use 17 for everything to tell IDE about the language features that are available
+    // on the lowest common denominator: 17. However, Forge versions that use a java 21 MC version
+    // won't compile on Java 17, so we need to use 21 for those.
+    val mcIsJava21 = stonecutter.eval(mcSemverVersion, ">1.20.4")
+    javaTarget = if (mcIsJava21 && isForgeLike) 21 else 17
 
     parchment {
         prop("parchment.version") { mappingsVersion = it }
