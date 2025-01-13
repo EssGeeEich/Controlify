@@ -1,7 +1,5 @@
 {
   "controlify.placeholder": "%1$s",
-  "controlify.gui.is_lce": "LCE Style Controls",
-  "controlify.gui.is_lce.tooltip": "Makes the controller feeling similar to the Legacy Console Edition.",
   "controlify.gui.carousel.title": "Kontrolcüler",
   "controlify.gui.carousel.no_controllers": "Kontrolcü bağlı değil.",
   "controlify.gui.carousel.entry.settings": "Ayarlar",
@@ -80,6 +78,8 @@
   "controlify.gui.auto_jump.tooltip": "Bir bloğa ulaştığınızda oyuncunun otomatik olarak zıplaması gerekiyorsa.",
   "controlify.gui.no_fly_drifting": "Uçarak Sürüklenmek Yok",
   "controlify.gui.no_fly_drifting.tooltip": "Kontrolleri bıraktığınızda hafif sürüklenmeyi devre dışı bırakır.",
+  "controlify.gui.is_lce": "LCE Style Controls",
+  "controlify.gui.is_lce.tooltip": "Makes the controller feeling similar to the Legacy Console Edition. This modifies the maths involved in turning joystick input into look direction.",
   "controlify.config.group.accessibility": "Erişilebilirlik",
   "controlify.gui.show_ingame_guide": "Oyun İçi Buton Kılavuzunu Göster",
   "controlify.gui.show_ingame_guide.tooltip": "Oyun içinde kontrol butonlarıyla yapabileceğiniz eylemleri gösteren bir HUD göster.",
