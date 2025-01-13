@@ -30,7 +30,7 @@ import java.util.Set;
 *///?}
 public abstract class AbstractRecipeBookScreenMixin<T extends AbstractContainerMenu>
         extends AbstractContainerScreenMixin<T>
-        implements ScreenProcessorProvider /*? if <1.21.2 {*/ /*,RecipeUpdateListener *//*?}*/ {
+        implements ScreenProcessorProvider, /*? if <1.21.2 {*/ /*RecipeUpdateListener *//*?} else {*/ RecipeBookScreenProcessor.RecipeBookScreenAccessor/*?}*/ {
 
     @Unique
     private final RecipeBookScreenProcessor<?> processor =
@@ -39,6 +39,17 @@ public abstract class AbstractRecipeBookScreenMixin<T extends AbstractContainerM
     protected AbstractRecipeBookScreenMixin(Component title) {
         super(title);
     }
+
+    //? if >=1.21.2 {
+    @Shadow
+    @Final
+    private RecipeBookComponent<?> recipeBookComponent;
+
+    @Override
+    public RecipeBookComponent<?> getRecipeBookComponent() {
+        return recipeBookComponent;
+    }
+    //?}
 
     @Override
     public ScreenProcessor<?> screenProcessor() {
