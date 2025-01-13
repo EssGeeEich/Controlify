@@ -1,7 +1,5 @@
 {
   "controlify.placeholder": "%1$s",
-  "controlify.gui.is_lce": "LCE Style Controls",
-  "controlify.gui.is_lce.tooltip": "Makes the controller feeling similar to the Legacy Console Edition.",
   "controlify.gui.carousel.title": "控制器",
   "controlify.gui.carousel.no_controllers": "沒有控制器連接。",
   "controlify.gui.carousel.entry.settings": "設定",
@@ -80,6 +78,8 @@
   "controlify.gui.auto_jump.tooltip": "當你到達一個方塊玩家應不應該自動跳躍",
   "controlify.gui.no_fly_drifting": "無飛行漂移",
   "controlify.gui.no_fly_drifting.tooltip": "當你放開控制時停用輕微漂移。",
+  "controlify.gui.is_lce": "LCE Style Controls",
+  "controlify.gui.is_lce.tooltip": "Makes the controller feeling similar to the Legacy Console Edition. This modifies the maths involved in turning joystick input into look direction.",
   "controlify.config.group.accessibility": "協助工具",
   "controlify.gui.show_ingame_guide": "顯示遊戲內按鈕指南",
   "controlify.gui.show_ingame_guide.tooltip": "在遊戲內顯示一個 HUD，顯示你可以使用控制器按鈕執行的操作。",
