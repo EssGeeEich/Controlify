@@ -85,16 +85,7 @@ public class ControllerConfigScreenFactory {
                         .description(OptionDescription.of(Component.translatable("controlify.gui.custom_name.tooltip")))
                         .binding(def.nickname == null ? "" : def.nickname, () -> config.nickname == null ? "" : config.nickname, v -> config.nickname = (v.isEmpty() ? null : v))
                         .controller(StringControllerBuilder::create)
-                        .build())
-                .option(Option.<Boolean>createBuilder()
-                .name(Component.translatable("controlify.gui.is_lce"))
-                .description(OptionDescription.createBuilder()
-                        .text(Component.translatable("controlify.gui.is_lce.tooltip"))
-                        .build())
-                        .binding(def.isLCE, () -> config.isLCE, v -> config.isLCE = v)
-                .controller(opt -> BooleanControllerBuilder.create(opt)
-                        .onOffFormatter())
-                .build());
+                        .build());
         if (!newOptions.isEmpty()) {
             builder.group(OptionGroup.createBuilder()
                     .name(Component.translatable("controlify.gui.new_options").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD))
@@ -214,6 +205,15 @@ public class ControllerConfigScreenFactory {
                         .binding(def.disableFlyDrifting, () -> ServerPolicies.DISABLE_FLY_DRIFTING.isUnset() ? config.disableFlyDrifting : ServerPolicies.DISABLE_FLY_DRIFTING.get(), v -> config.disableFlyDrifting = v)
                         .controller(TickBoxControllerBuilder::create)
                         .available(!ServerPolicies.DISABLE_FLY_DRIFTING.isUnset())
+                        .build())
+                .option(Option.<Boolean>createBuilder()
+                        .name(Component.translatable("controlify.gui.is_lce"))
+                        .description(OptionDescription.createBuilder()
+                                .text(Component.translatable("controlify.gui.is_lce.tooltip"))
+                                .build())
+                        .binding(def.isLCE, () -> config.isLCE, v -> config.isLCE = v)
+                        .controller(opt -> BooleanControllerBuilder.create(opt)
+                                .onOffFormatter())
                         .build())
                 .build());
     }
