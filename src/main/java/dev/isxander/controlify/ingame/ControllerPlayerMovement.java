@@ -115,7 +115,11 @@ public class ControllerPlayerMovement extends /*? if >=1.21.2 {*/ ClientInput /*
 
     private void setMoveVec(float forward, float left) {
         //? if >=1.21.5 {
-        /*this.moveVector = new Vec2(left, forward);
+        /*// Starting snapshot 25w02a, move vector is now normalised.
+        // This slows down the player when moving diagonally, this will be reflected
+        // by Controlify. This means that 25w02a and later targets will have differing movement mechanics
+        // in Controlify.
+        this.moveVector = new Vec2(left, forward).normalized();
         *///?} else {
         this.forwardImpulse = forward;
         this.leftImpulse = left;
