@@ -1,7 +1,5 @@
 {
   "controlify.placeholder": "%1$s",
-  "controlify.gui.is_lce": "LCE Style Controls",
-  "controlify.gui.is_lce.tooltip": "Makes the controller feeling similar to the Legacy Console Edition.",
   "controlify.gui.carousel.title": "Kontrollerek",
   "controlify.gui.carousel.no_controllers": "Nincs kontroller csatlakoztatva.",
   "controlify.gui.carousel.entry.settings": "Beállítások",
@@ -80,6 +78,8 @@
   "controlify.gui.auto_jump.tooltip": "A játékos automatikusan ugorjon-e ha egy blokkhoz ér.",
   "controlify.gui.no_fly_drifting": "Nincs Repülési Sodródás",
   "controlify.gui.no_fly_drifting.tooltip": "Kikapcsolja az enyhe repülési sodródást mikor elengeded az irányítást.",
+  "controlify.gui.is_lce": "LCE Style Controls",
+  "controlify.gui.is_lce.tooltip": "Makes the controller feeling similar to the Legacy Console Edition. This modifies the maths involved in turning joystick input into look direction.",
   "controlify.config.group.accessibility": "Kisegítő Lehetőségek",
   "controlify.gui.show_ingame_guide": "Játékon Belüli Gomb Útmutató Mutatása",
   "controlify.gui.show_ingame_guide.tooltip": "Show a HUD in-game displaying actions you can do with controller buttons.",
