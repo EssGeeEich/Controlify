@@ -4,6 +4,7 @@ import dev.isxander.controlify.platform.network.SidedNetworkApi;
 import dev.isxander.controlify.platform.main.PlatformMainUtil;
 import dev.isxander.controlify.server.packets.*;
 import dev.isxander.controlify.utils.CUtil;
+import net.minecraft.server.level.ServerPlayer;
 
 public class ControlifyServer {
     private static ControlifyServer INSTANCE;
@@ -32,24 +33,24 @@ public class ControlifyServer {
 
         CUtil.LOGGER.log("Reach-around policy: {}", ControlifyServerConfig.HANDLER.instance().reachAroundPolicy);
         CUtil.LOGGER.log("No-fly drift policy: {}", ControlifyServerConfig.HANDLER.instance().noFlyDriftPolicy);
+        CUtil.LOGGER.log("Enforce keyboard-like movement: {}", ControlifyServerConfig.HANDLER.instance().enforceKeyboardLikeMovement);
 
+        ControlifyServerConfig config = ControlifyServerConfig.HANDLER.instance();
         PlatformMainUtil.registerPlayerJoinedEvent(player -> {
-            SidedNetworkApi.S2C().sendPacket(
-                    player,
-                    ServerPolicyPacket.CHANNEL,
-                    new ServerPolicyPacket(
-                            ServerPolicies.REACH_AROUND.getId(),
-                            ControlifyServerConfig.HANDLER.instance().reachAroundPolicy
-                    )
-            );
-            SidedNetworkApi.S2C().sendPacket(
-                    player,
-                    ServerPolicyPacket.CHANNEL,
-                    new ServerPolicyPacket(
-                            ServerPolicies.DISABLE_FLY_DRIFTING.getId(),
-                            ControlifyServerConfig.HANDLER.instance().noFlyDriftPolicy
-                    )
-            );
+            setServerPolicy(ServerPolicies.REACH_AROUND, player, config.reachAroundPolicy);
+            setServerPolicy(ServerPolicies.DISABLE_FLY_DRIFTING, player, config.noFlyDriftPolicy);
+            setServerPolicy(ServerPolicies.KEYBOARD_LIKE_MOVEMENT, player, config.enforceKeyboardLikeMovement);
         });
+    }
+
+    private void setServerPolicy(ServerPolicies policy, ServerPlayer player, boolean option) {
+        SidedNetworkApi.S2C().sendPacket(
+                player,
+                ServerPolicyPacket.CHANNEL,
+                new ServerPolicyPacket(
+                        policy.getId(),
+                        option
+                )
+        );
     }
 }

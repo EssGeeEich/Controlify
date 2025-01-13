@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import com.google.gson.annotations.SerializedName;
 import dev.isxander.controlify.driver.steamdeck.SteamDeckUtil;
 import dev.isxander.controlify.reacharound.ReachAroundMode;
+import dev.isxander.controlify.server.ServerPolicies;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.multiplayer.ServerData;
@@ -39,7 +40,8 @@ public class GlobalSettings {
     public boolean shouldUseKeyboardMovement() {
         ServerData server = Minecraft.getInstance().getCurrentServer();
         return alwaysKeyboardMovement
-                || (server != null && keyboardMovementWhitelist.stream().anyMatch(server.ip::endsWith));
+               || (server != null && keyboardMovementWhitelist.stream().anyMatch(server.ip::endsWith))
+               || ServerPolicies.KEYBOARD_LIKE_MOVEMENT.get();
     }
 
     // Quiet mode does not work on Steam Deck

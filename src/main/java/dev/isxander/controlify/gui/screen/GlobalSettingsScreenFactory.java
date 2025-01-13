@@ -74,16 +74,16 @@ public class GlobalSettingsScreenFactory {
                                                 .text(Component.translatable("controlify.gui.reach_around.tooltip"))
                                                 .text(Component.translatable("controlify.gui.reach_around.tooltip.parity").withStyle(ChatFormatting.GRAY))
                                                 .text(state == ReachAroundMode.EVERYWHERE ? Component.translatable("controlify.gui.reach_around.tooltip.warning").withStyle(ChatFormatting.RED) : Component.empty())
-                                                .text(ServerPolicies.REACH_AROUND.get() != ServerPolicy.DISALLOWED ? Component.translatable("controlify.gui.server_controlled").withStyle(ChatFormatting.GOLD) : Component.empty())
+                                                .text(ServerPolicies.REACH_AROUND.getPolicy() == ServerPolicy.DISALLOWED ? Component.translatable("controlify.gui.server_controlled").withStyle(ChatFormatting.GOLD) : Component.empty())
                                                 .build())
                                         .binding(GlobalSettings.DEFAULT.reachAround, () -> globalSettings.reachAround, v -> globalSettings.reachAround = v)
                                         .controller(opt -> EnumControllerBuilder.create(opt)
                                                 .enumClass(ReachAroundMode.class)
-                                                .formatValue(mode -> switch (ServerPolicies.REACH_AROUND.get()) {
+                                                .formatValue(mode -> switch (ServerPolicies.REACH_AROUND.getPolicy()) {
                                                     case UNSET, ALLOWED -> mode.getDisplayName();
                                                     case DISALLOWED -> CommonComponents.OPTION_OFF;
                                                 }))
-                                        .available(ServerPolicies.REACH_AROUND.get().isAllowed())
+                                        .available(ServerPolicies.REACH_AROUND.get())
                                         .build())
                                 .option(Option.<Boolean>createBuilder()
                                         .name(Component.translatable("controlify.gui.allow_server_rumble"))
@@ -92,7 +92,7 @@ public class GlobalSettingsScreenFactory {
                                                 .build())
                                         .binding(GlobalSettings.DEFAULT.allowServerRumble, () -> globalSettings.allowServerRumble, v -> globalSettings.allowServerRumble = v)
                                         .controller(TickBoxControllerBuilder::create)
-                                        .listener((opt, val) -> {
+                                        .addListener((opt, val) -> {
                                             ControlifyApi.get().getCurrentController()
                                                     .flatMap(ControllerEntity::rumble)
                                                     .ifPresent(rumble -> rumble.rumbleManager().clearEffects());

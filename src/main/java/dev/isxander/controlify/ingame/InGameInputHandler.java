@@ -418,7 +418,7 @@ public class InGameInputHandler {
     }
 
     public void preventFlyDrifting() {
-        if (!controller.genericConfig().config().disableFlyDrifting || !ServerPolicies.DISABLE_FLY_DRIFTING.get().isAllowed()) {
+        if (!controller.genericConfig().config().disableFlyDrifting || !ServerPolicies.DISABLE_FLY_DRIFTING.get()) {
             return;
         }
 

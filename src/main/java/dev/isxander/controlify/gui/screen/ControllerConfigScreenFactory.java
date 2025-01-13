@@ -209,11 +209,11 @@ public class ControllerConfigScreenFactory {
                         .name(Component.translatable("controlify.gui.no_fly_drifting"))
                         .description(OptionDescription.createBuilder()
                                 .text(Component.translatable("controlify.gui.no_fly_drifting.tooltip"))
-                                .text(ServerPolicies.DISABLE_FLY_DRIFTING.get() != ServerPolicy.UNSET ? Component.translatable("controlify.gui.server_controlled").withStyle(ChatFormatting.GOLD) : Component.empty())
+                                .text(ServerPolicies.DISABLE_FLY_DRIFTING.isUnset() ? Component.translatable("controlify.gui.server_controlled").withStyle(ChatFormatting.GOLD) : Component.empty())
                                 .build())
-                        .binding(def.disableFlyDrifting, () -> ServerPolicies.DISABLE_FLY_DRIFTING.get().isAllowed() && config.disableFlyDrifting, v -> config.disableFlyDrifting = v)
+                        .binding(def.disableFlyDrifting, () -> ServerPolicies.DISABLE_FLY_DRIFTING.isUnset() ? config.disableFlyDrifting : ServerPolicies.DISABLE_FLY_DRIFTING.get(), v -> config.disableFlyDrifting = v)
                         .controller(TickBoxControllerBuilder::create)
-                        .available(ServerPolicies.DISABLE_FLY_DRIFTING.get().isAllowed())
+                        .available(!ServerPolicies.DISABLE_FLY_DRIFTING.isUnset())
                         .build())
                 .build());
     }

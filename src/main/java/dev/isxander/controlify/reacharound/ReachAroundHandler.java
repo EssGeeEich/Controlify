@@ -31,7 +31,7 @@ public class ReachAroundHandler {
     }
 
     private static boolean canReachAround(Entity cameraEntity) {
-        boolean allowedToReachAround = switch (ServerPolicies.REACH_AROUND.get()) {
+        boolean serverAllowed = switch (ServerPolicies.REACH_AROUND.getPolicy()) {
             // straight no, not allowed
             case DISALLOWED -> false;
             // if unset, respect the global setting
@@ -40,7 +40,7 @@ public class ReachAroundHandler {
             case ALLOWED -> Controlify.instance().config().globalSettings().reachAround != ReachAroundMode.OFF;
         };
 
-        return allowedToReachAround
+        return serverAllowed
                 // don't want to place blocks while riding an entity
                 && cameraEntity.getVehicle() == null
                 // straight ahead = 0deg, up = -90deg, down = 90deg
