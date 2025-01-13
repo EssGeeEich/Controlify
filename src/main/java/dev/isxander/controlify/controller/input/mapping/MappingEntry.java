@@ -3,8 +3,8 @@ package dev.isxander.controlify.controller.input.mapping;
 import dev.isxander.controlify.controller.input.ControllerState;
 import dev.isxander.controlify.controller.input.HatState;
 import dev.isxander.controlify.controller.input.ModifiableControllerState;
+import dev.isxander.controlify.utils.MthExt;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
 
 public sealed interface MappingEntry {
     void apply(ControllerState oldState, ModifiableControllerState newState);
@@ -70,7 +70,7 @@ public sealed interface MappingEntry {
             @Override
             public void apply(ControllerState oldState, ModifiableControllerState newState) {
                 float oldVal = oldState.getAxisState(from);
-                float newVal = Mth.lerp(Mth.inverseLerp(oldVal, minIn, maxIn), minOut, maxOut);
+                float newVal = MthExt.remap(oldVal, minIn, maxIn, minOut, maxOut);
                 newState.setAxis(to, newVal);
             }
         }
