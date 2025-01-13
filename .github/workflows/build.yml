@@ -25,7 +25,9 @@ jobs:
           fetch-depth: 0
       - name: Get potential versions
         id: get-targets
-        run: ./.github/scripts/generate-targets.sh
+        run: |
+          TARGETS=$(jq -c '[.builds | to_entries[] | .value.platforms[] as $platform | "\(.key)-\($platform)"]' ./versions/builds.json)
+          echo "targets=$TARGETS" >> $GITHUB_OUTPUT
         working-directory: versions
 
   build:
