@@ -144,5 +144,10 @@ public class DS5EffectsState extends Structure {
         public static final byte OFF       = 0;
         public static final byte ON        = 1;
         public static final byte BREATHING = 2;
+
+        @MagicConstant(valuesFromClass = MuteLightState.class)
+        public static byte fromBoolean(boolean state) {
+            return state ? ON : OFF;
+        }
     }
 }

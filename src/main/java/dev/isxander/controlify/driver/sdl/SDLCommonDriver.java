@@ -246,7 +246,7 @@ public abstract class SDLCommonDriver<SDL_Controller> implements Driver {
 
             // Mute Light
             effectsState.ucEnableBits2 |= DS5EffectsState.EnableBitFlags2.ALLOW_MUTE_LIGHT;
-            effectsState.ucMicLightMode = (byte) (this.dualSenseComponent.getMuteLight() ? 1 : 0);
+            effectsState.ucMicLightMode = DS5EffectsState.MuteLightState.fromBoolean(this.dualSenseComponent.getMuteLight());
 
             effectsState.write();
 
