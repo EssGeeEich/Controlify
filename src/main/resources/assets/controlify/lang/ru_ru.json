@@ -1,7 +1,5 @@
 {
   "controlify.placeholder": "%1$s",
-  "controlify.gui.is_lce": "LCE Style Controls",
-  "controlify.gui.is_lce.tooltip": "Makes the controller feeling similar to the Legacy Console Edition.",
   "controlify.gui.carousel.title": "Контроллеры",
   "controlify.gui.carousel.no_controllers": "Нет подключённых контроллеров.",
   "controlify.gui.carousel.entry.settings": "Настройки",
@@ -80,6 +78,8 @@
   "controlify.gui.auto_jump.tooltip": "Должен ли игрок автоматически прыгать при приближении к блоку.",
   "controlify.gui.no_fly_drifting": "Без дрифта при полёте",
   "controlify.gui.no_fly_drifting.tooltip": "Отключение небольшого дрифта, когда вы отпускаете руки.",
+  "controlify.gui.is_lce": "LCE Style Controls",
+  "controlify.gui.is_lce.tooltip": "Makes the controller feeling similar to the Legacy Console Edition. This modifies the maths involved in turning joystick input into look direction.",
   "controlify.config.group.accessibility": "Доступность",
   "controlify.gui.show_ingame_guide": "Показывать внутриигровые подсказки",
   "controlify.gui.show_ingame_guide.tooltip": "Показывать в игре подсказки, отображающие действия, которые можно выполнять с помощью контроллера.",
