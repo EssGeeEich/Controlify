@@ -6,6 +6,11 @@ plugins {
     id("org.ajoberstar.grgit") version "5.0.+"
     id("dev.kikugie.stonecutter")
     id("de.undercouch.download") version "5.6.0"
+
+    val modstitchVersion = "0.5.4"
+    id("dev.isxander.modstitch.base") version modstitchVersion apply false
+    id("dev.isxander.modstitch.publishing") version modstitchVersion apply false
+    id("dev.isxander.modstitch.shadow") version modstitchVersion apply false
 }
 
 val ciSingleBuild: String? = System.getenv("CI_SINGLE_BUILD")
@@ -37,6 +42,15 @@ val releaseMod by tasks.registering {
     dependsOn(chiseledBuildAndCollect)
     dependsOn(chiseledReleaseModVersion)
     dependsOn("publishMods")
+}
+
+allprojects {
+    repositories {
+        maven("https://maven.terraformersmc.com")
+        maven("https://maven.isxander.dev/releases")
+        maven("https://maven.isxander.dev/snapshots")
+        maven("https://maven.quiltmc.org/repository/release")
+    }
 }
 
 stonecutter.parameters {

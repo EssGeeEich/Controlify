@@ -9,7 +9,7 @@ on:
       - '.editorconfig'
       - 'changelog.md'
       - 'mod-comparison.md'
-    pull_request:
+  pull_request:
 
 jobs:
   retrieve-targets:
@@ -21,22 +21,20 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Get potential versions
         id: get-targets
-        run: |
-          TARGETS=$(ls -d versions/*/ | xargs -n 1 basename | jq -Rc [inputs])
-          echo "targets=$TARGETS" >> $GITHUB_OUTPUT
+        run: ./.github/scripts/generate-targets.sh
+        working-directory: versions
 
   build:
     needs: retrieve-targets
     runs-on: ubuntu-latest
     name: Build with gradle
 
-    # Folders in versions folder may not be registered in gradle,
-    # which will make this build fail. This is why we ignore errors.
-    continue-on-error: true
-
     strategy:
+      fail-fast: false
       matrix:
         target: ${{ fromJson(needs.retrieve-targets.outputs.targets) }}
 
@@ -47,8 +45,10 @@ jobs:
         with:
           java-version: 21
           distribution: temurin
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
+      - name: Setup gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          cache-read-only: false
       - name: Build ${{ matrix.target }}
         run: ./gradlew "Refresh active project" buildAndCollectActive --stacktrace
         env:
@@ -58,18 +58,11 @@ jobs:
           path: build/finalJars/*.jar
           name: ${{ matrix.target }}
 
-  chiseled:
-    runs-on: ubuntu-latest
-    name: Build chiseled (traditional build)
-
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          java-version: 21
-          distribution: temurin
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-      - name: Build chiseled
-        run: ./gradlew chiseledBuildAndCollect --stacktrace
+#  run:
+#    needs: build
+#    runs-on: ubuntu-latest
+#    name: Run Minecraft
+#
+#    strategy:
+#      matrix:
+#        target: ${{ fromJson(needs.retrieve-targets.outputs.targets) }}

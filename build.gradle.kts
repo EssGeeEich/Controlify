@@ -1,7 +1,7 @@
 plugins {
-    val modstitch = "0.4.0"
-    id("dev.isxander.modstitch.base") version modstitch
-    id("dev.isxander.modstitch.publishing") version modstitch
+    id("dev.isxander.modstitch.base")
+    id("dev.isxander.modstitch.shadow")
+    id("dev.isxander.modstitch.publishing")
 
     id("dev.kikugie.j52j") version "1.0.3"
 }
@@ -51,11 +51,6 @@ modstitch {
         prop("meta.mcDep") { replacementProperties.put("mc", it) }
         prop("meta.loaderDep") { replacementProperties.put("loaderVersion", it) }
         prop("deps.fabricApi") { replacementProperties.put("fapi", it) }
-
-
-        if (isNeoforge && stonecutter.eval(stonecutter.current.version, "<=1.20.4")) {
-            modLoaderManifest = "META-INF/mods.toml" // neoforge used to use this
-        }
     }
 
     loom {
@@ -117,15 +112,11 @@ stonecutter {
         "net.caffeinemc.mods.sodium" else "me.jellysquid.mods.sodium"
 }
 
-repositories {
-    maven("https://maven.terraformersmc.com")
-    maven("https://maven.isxander.dev/releases")
-    maven("https://maven.isxander.dev/snapshots")
-    maven("https://maven.quiltmc.org/repository/release")
-}
-
 dependencies {
     fun Dependency?.jij() = this?.also(::modstitchJiJ)
+    fun Dependency?.shadow(`package`: String, relocation: String) = this?.also {
+        msShadow.dependency(this, `package` to relocation)
+    }
 
     prop("deps.mixinExtras") {
         when {
@@ -136,10 +127,14 @@ dependencies {
         }
     }
 
-    fun modDependency(id: String, artifactGetter: (String) -> String, extra: (Boolean) -> Unit = {}) {
+    fun modDependency(id: String, artifactGetter: (String) -> String, requiredByDependants: Boolean = false, extra: (Boolean) -> Unit = {}) {
         prop("deps.$id") {
             val noRuntime = findProperty("deps.$id.noRuntime")?.toString()?.toBoolean() == true
-            val configuration = if (noRuntime) "modstitchModCompileOnly" else "modstitchModImplementation"
+            val configuration = if (requiredByDependants) {
+                if (noRuntime) "modstitchModCompileOnlyApi" else "modstitchModApi"
+            } else {
+                if (noRuntime) "modstitchModCompileOnly" else "modstitchModImplementation"
+            }
 
             configuration(artifactGetter(it))
 
@@ -148,7 +143,7 @@ dependencies {
     }
 
     if (isFabric) {
-        modDependency("fabricApi", { "net.fabricmc.fabric-api:fabric-api:$it" })
+        modDependency("fabricApi", { "net.fabricmc.fabric-api:fabric-api:$it" }, requiredByDependants = true)
 
         // mod menu compat
         modDependency("modMenu", { "com.terraformersmc:modmenu:$it" })
@@ -162,18 +157,19 @@ dependencies {
 
     // bindings for SDL3
     modstitchApi("dev.isxander:libsdl4j:${property("deps.sdl3Target")}-${property("deps.sdl34jBuild")}")
-        .jij()
+        .shadow("dev.isxander.sdl3java", "libsdl4j")
 
     // steam deck bindings
     modstitchApi("dev.isxander:steamdeck4j:${property("deps.steamdeck4j")}")
-        .jij()
+        .shadow("dev.isxander.deckapi", "steamdeck4j")
 
     // used to identify controller PID/VID when SDL is not available
     modstitchApi("org.hid4java:hid4java:${property("deps.hid4java")}")
-        .jij()
+        .shadow("org.hid4java", "hid4java")
 
     // A json5 reader
-    api("org.quiltmc.parsers:json:${property("deps.quiltParsers")}").jij()
+    api("org.quiltmc.parsers:json:${property("deps.quiltParsers")}")
+        .shadow("org.quiltmc.parsers.json", "quiltjson")
 
     // sodium compat
     modDependency("sodium", { "maven.modrinth:sodium:$it" })
@@ -222,18 +218,11 @@ val releaseModVersion by tasks.registering {
     }
 }
 
-val platformOutputJar = when {
-    modstitch.isLoom -> "remapJar"
-    modstitch.isModDevGradleRegular -> "jar"
-    modstitch.isModDevGradleLegacy -> "reobfJar"
-    else -> error("Unknown loader")
-}.let { tasks.named<AbstractArchiveTask>(it) }
-
 val offlineJar by tasks.registering(Jar::class) {
     group = "controlify/versioned/internal"
 
     // ensure the input jar is built
-    val inputJar = platformOutputJar
+    val inputJar = modstitch.finalJarTask
     dependsOn(inputJar)
 
     // ensure the natives are downloaded
@@ -249,11 +238,11 @@ val offlineJar by tasks.registering(Jar::class) {
     // set the classifier
     archiveClassifier.set("offline")
 }
-tasks.build { dependsOn(offlineJar) }
+tasks.assemble { dependsOn(offlineJar) }
 
 val finalJarTasks = listOf(
     offlineJar,
-    platformOutputJar,
+    modstitch.finalJarTask,
 )
 
 val buildAndCollect by tasks.registering(Copy::class) {
@@ -268,6 +257,10 @@ val buildAndCollect by tasks.registering(Copy::class) {
 }
 
 createActiveTask(buildAndCollect)
+
+msShadow {
+    relocatePackage = "dev.isxander.controlify.libs"
+}
 
 msPublishing {
     mpp {

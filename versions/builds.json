@@ -1,0 +1,23 @@
+{
+  "vcsVersion": "1.21.4-fabric",
+  "builds": {
+    "1.21.4": {
+      "platforms": ["fabric", "neoforge"]
+    },
+    "1.21.3": {
+      "platforms": ["fabric", "neoforge"]
+    },
+    "1.21": {
+      "platforms": ["fabric", "neoforge"]
+    },
+    "1.20.6": {
+      "platforms": ["fabric", "neoforge"]
+    },
+    "1.20.4": {
+      "platforms": ["fabric", "neoforge"]
+    },
+    "1.20.1": {
+      "platforms": ["fabric"]
+    }
+  }
+}
