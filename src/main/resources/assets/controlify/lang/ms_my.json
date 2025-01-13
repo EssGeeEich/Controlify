@@ -1,7 +1,5 @@
 {
   "controlify.placeholder": "%1$s",
-  "controlify.gui.is_lce": "LCE Style Controls",
-  "controlify.gui.is_lce.tooltip": "Makes the controller feeling similar to the Legacy Console Edition.",
   "controlify.gui.carousel.title": "Pengawal",
   "controlify.gui.carousel.no_controllers": "Tiada pengawal disambung.",
   "controlify.gui.carousel.entry.settings": "Tetapan",
@@ -80,6 +78,8 @@
   "controlify.gui.auto_jump.tooltip": "Jika pemain harus melompat secara automatik apabila anda mencapai blok.",
   "controlify.gui.no_fly_drifting": "Tiada Hanyutan Terbang",
   "controlify.gui.no_fly_drifting.tooltip": "Menyahdayakan hanyutan kecil apabila anda melepaskan kawalan.",
+  "controlify.gui.is_lce": "LCE Style Controls",
+  "controlify.gui.is_lce.tooltip": "Makes the controller feeling similar to the Legacy Console Edition. This modifies the maths involved in turning joystick input into look direction.",
   "controlify.config.group.accessibility": "Kebolehcapaian",
   "controlify.gui.show_ingame_guide": "Tunjukkan Panduan Butang Dalam Permainan",
   "controlify.gui.show_ingame_guide.tooltip": "Tunjukkan HUD dalam permainan yang memaparkan tindakan yang boleh anda lakukan dengan butang pengawal.",
