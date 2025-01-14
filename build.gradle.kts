@@ -65,6 +65,11 @@ modstitch {
             runConfigs.all {
                 ideConfigGenerated(false)
             }
+
+            @Suppress("UnstableApiUsage")
+            tasks.register("runProdClient", net.fabricmc.loom.task.prod.ClientProductionRunTask::class) {
+                group = "fabric"
+            }
         }
     }
 
