@@ -7,7 +7,7 @@ plugins {
     id("dev.kikugie.stonecutter")
     id("de.undercouch.download") version "5.6.0"
 
-    val modstitchVersion = "0.5.5"
+    val modstitchVersion = "0.5.6"
     id("dev.isxander.modstitch.base") version modstitchVersion apply false
     id("dev.isxander.modstitch.publishing") version modstitchVersion apply false
     id("dev.isxander.modstitch.shadow") version modstitchVersion apply false
