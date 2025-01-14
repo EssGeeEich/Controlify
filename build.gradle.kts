@@ -96,19 +96,24 @@ modstitch {
     }
 }
 
-createActiveTask(tasks.named("runClient"))
-
 val productionMods: Configuration by configurations.creating {
     isTransitive = false
 }
 if (isFabric) {
     @Suppress("UnstableApiUsage")
-    tasks.register("runProdClient", net.fabricmc.loom.task.prod.ClientProductionRunTask::class) {
+    val runProdClient by tasks.registering(net.fabricmc.loom.task.prod.ClientProductionRunTask::class) {
         group = "fabric"
 
         mods.from(productionMods)
     }
+} else {
+    val runProdClient by tasks.registering {
+        group = "controlify/versioned"
+        dependsOn("runClient") // neoforge is prod always
+    }
 }
+createActiveTask(taskName = "runClient")
+createActiveTask(taskName = "runProdClient")
 
 stonecutter {
     consts(
@@ -152,7 +157,7 @@ dependencies {
         supportsRuntime: Boolean = true,
         extra: (Boolean) -> Unit = {}
     ) {
-        prop("deps.$id") {
+        prop("deps.$id") { modVersion ->
             val noRuntime = prop("deps.$id.noRuntime") { it.toString().toBoolean() } == true
             require(noRuntime || supportsRuntime) { "No runtime is not supported for $id" }
 
@@ -162,7 +167,7 @@ dependencies {
                 if (noRuntime) "modstitchModCompileOnly" else "modstitchModImplementation"
             }
 
-            artifactGetter(it).let {
+            artifactGetter(modVersion).let {
                 configuration(it)
                 if (!noRuntime) productionMods(it)
             }
@@ -387,12 +392,27 @@ fun isPropDefined(property: String): Boolean {
     return prop(property) { true } == true
 }
 
-fun <T : Task> createActiveTask(task: TaskProvider<T>, internal: Boolean = false) {
+fun createActiveTask(
+    taskProvider: TaskProvider<*>? = null,
+    taskName: String? = null,
+    internal: Boolean = false
+): String {
+    val taskExists = taskProvider != null || taskName!! in tasks.names
+    val task = taskProvider ?: taskName?.takeIf { taskExists }?.let { tasks.named(it) }
+    val taskName = when {
+        taskProvider != null -> taskProvider.name
+        taskName != null -> taskName
+        else -> error("Either taskProvider or taskName must be provided")
+    }
+    val activeTaskName = "${taskName}Active"
+
     if (stonecutter.current.isActive) {
-        rootProject.tasks.register("${task.name}Active") {
+        rootProject.tasks.register(activeTaskName) {
             group = "controlify${if (internal) "/versioned" else ""}"
 
-            dependsOn(task)
+            task?.let { dependsOn(it) }
         }
     }
+
+    return activeTaskName
 }
