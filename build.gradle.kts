@@ -65,11 +65,6 @@ modstitch {
             runConfigs.all {
                 ideConfigGenerated(false)
             }
-
-            @Suppress("UnstableApiUsage")
-            tasks.register("runProdClient", net.fabricmc.loom.task.prod.ClientProductionRunTask::class) {
-                group = "fabric"
-            }
         }
     }
 
@@ -103,6 +98,18 @@ modstitch {
 
 createActiveTask(tasks.named("runClient"))
 
+val productionMods: Configuration by configurations.creating {
+    isTransitive = false
+}
+if (isFabric) {
+    @Suppress("UnstableApiUsage")
+    tasks.register("runProdClient", net.fabricmc.loom.task.prod.ClientProductionRunTask::class) {
+        group = "fabric"
+
+        mods.from(productionMods)
+    }
+}
+
 stonecutter {
     consts(
         "fabric" to modstitch.isLoom,
@@ -127,6 +134,7 @@ dependencies {
     fun Dependency?.shadow(`package`: String, relocation: String) = this?.also {
         msShadow.dependency(this, `package` to relocation)
     }
+    fun Dependency?.productionMod() = this?.also { productionMods(it) }
 
     prop("deps.mixinExtras") {
         when {
@@ -137,16 +145,27 @@ dependencies {
         }
     }
 
-    fun modDependency(id: String, artifactGetter: (String) -> String, requiredByDependants: Boolean = false, extra: (Boolean) -> Unit = {}) {
+    fun modDependency(
+        id: String,
+        artifactGetter: (String) -> String,
+        requiredByDependants: Boolean = false,
+        supportsRuntime: Boolean = true,
+        extra: (Boolean) -> Unit = {}
+    ) {
         prop("deps.$id") {
-            val noRuntime = findProperty("deps.$id.noRuntime")?.toString()?.toBoolean() == true
+            val noRuntime = prop("deps.$id.noRuntime") { it.toString().toBoolean() } == true
+            require(noRuntime || supportsRuntime) { "No runtime is not supported for $id" }
+
             val configuration = if (requiredByDependants) {
                 if (noRuntime) "modstitchModCompileOnlyApi" else "modstitchModApi"
             } else {
                 if (noRuntime) "modstitchModCompileOnly" else "modstitchModImplementation"
             }
 
-            configuration(artifactGetter(it))
+            artifactGetter(it).let {
+                configuration(it)
+                if (!noRuntime) productionMods(it)
+            }
 
             extra(!noRuntime)
         }
@@ -163,7 +182,7 @@ dependencies {
         // was including old fapi version that broke things at runtime
         exclude(group = "net.fabricmc.fabric-api", module = "fabric-api")
         exclude(group = "thedarkcolour")
-    }
+    }.productionMod()
 
     // bindings for SDL3
     modstitchApi("dev.isxander:libsdl4j:${property("deps.sdl3Target")}-${property("deps.sdl34jBuild")}")
@@ -206,7 +225,7 @@ dependencies {
     modDependency("simpleVoiceChat", { "maven.modrinth:simple-voice-chat:$it" })
 
     // fancy menu compat
-    modDependency("fancyMenu", { "maven.modrinth:fancymenu:$it" })
+    modDependency("fancyMenu", { "maven.modrinth:fancymenu:$it" }, supportsRuntime = false)
 }
 
 tasks.generateModMetadata {
@@ -231,19 +250,15 @@ val releaseModVersion by tasks.registering {
 val offlineJar by tasks.registering(Jar::class) {
     group = "controlify/versioned/internal"
 
-    // ensure the input jar is built
+    // include the contents of the regular jar
     val inputJar = modstitch.finalJarTask
+    from(zipTree(inputJar.flatMap { it.archiveFile }))
     dependsOn(inputJar)
 
-    // ensure the natives are downloaded
+    // add the natives to the jar
     val downloadTask = rootProject.tasks["downloadOfflineNatives"]
-    dependsOn(downloadTask)
-
-    // include the contents of the input jar
-    from(zipTree(inputJar.flatMap { it.archiveFile }))
-
-    // add the natives
     from(downloadTask.outputs.files)
+    dependsOn(downloadTask)
 
     // set the classifier
     archiveClassifier.set("offline")
@@ -369,8 +384,7 @@ fun <T> prop(property: String, required: Boolean = false, ifNull: () -> String? 
 }
 
 fun isPropDefined(property: String): Boolean {
-    return (System.getenv(property) ?: findProperty(property)?.toString())
-        ?.isNotBlank() == true
+    return prop(property) { true } == true
 }
 
 fun <T : Task> createActiveTask(task: TaskProvider<T>, internal: Boolean = false) {

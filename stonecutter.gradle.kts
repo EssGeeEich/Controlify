@@ -132,15 +132,17 @@ version = modVersion
 
 val versionProjects = stonecutter.versions.map { findProject(it.project)!! }
 publishMods {
-    val modChangelog =
+    val modChangelog = provider {
         rootProject.file("changelog.md")
             .takeIf { it.exists() }
             ?.readText()
             ?.replace("{version}", modVersion)
-            ?.replace("{targets}", stonecutter.versions
+            ?.replace(
+                "{targets}", stonecutter.versions
                 .map { it.project }
                 .joinToString(separator = "\n") { "- $it" })
             ?: "No changelog provided."
+    }
     changelog.set(modChangelog)
 
     type.set(
@@ -159,14 +161,15 @@ publishMods {
             username = "Controlify Updates"
             avatarUrl = "https://raw.githubusercontent.com/isXander/Controlify/1.20.x/dev/src/main/resources/icon.png"
 
-            var discordChangelog = changelog.get()
-            val controlifyPing = "\n\n<@&1146064258652712960>" // <@Controlify Ping>
-            if ((discordChangelog.length + controlifyPing.length) > 2000) {
-                println("Changelog is too long for Discord, trimming.")
-                discordChangelog = discordChangelog.substring(0, 2000 - controlifyPing.length - 3) + "..."
+            content = changelog.map { changelog ->
+                var newChangelog = changelog
+                val controlifyPing = "\n\n<@&1146064258652712960>" // <@Controlify Ping>
+                if ((newChangelog.length + controlifyPing.length) > 2000) {
+                    println("Changelog is too long for Discord, trimming.")
+                    newChangelog = newChangelog.substring(0, 2000 - controlifyPing.length - 3) + "..."
+                }
+                newChangelog + controlifyPing
             }
-
-            content = "$discordChangelog\n\n<@&1146064258652712960>" // <@Controlify Ping>
 
 //            publishResults.from(
 //                *versionProjects
