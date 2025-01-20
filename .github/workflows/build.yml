@@ -26,24 +26,7 @@ jobs:
       - name: Get potential versions
         id: generate-matrix
         run: |
-          MATRIX=$(
-            jq '{
-              include: (
-                .builds
-                | to_entries
-                | map(
-                . as $entry
-                |
-                $entry.value.platforms
-                | map({
-                target: ($entry.key + "-" + .),
-                experimental: ($entry.value.experimental // false)
-              })
-                )
-                | flatten
-              )
-            }' ./versions/builds.json
-          )
+          MATRIX=$(jq '{include: (.builds | to_entries | map(. as $entry | $entry.value.platforms | map({ target: ($entry.key + "-" + .), experimental: ($entry.value.experimental // false) })) | flatten)}' ./versions/builds.json)
           echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
 
   build:
