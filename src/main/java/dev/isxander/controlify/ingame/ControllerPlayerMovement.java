@@ -115,11 +115,20 @@ public class ControllerPlayerMovement extends /*? if >=1.21.2 {*/ ClientInput /*
 
     private void setMoveVec(float forward, float left) {
         //? if >=1.21.5 {
-        /*// Starting snapshot 25w02a, move vector is now normalised.
-        // This slows down the player when moving diagonally, this will be reflected
-        // by Controlify. This means that 25w02a and later targets will have differing movement mechanics
-        // in Controlify.
-        this.moveVector = new Vec2(left, forward).normalized();
+        /*/^
+        Starting 25w02a, movement vector is normalised (length set to 1). This won't work in analogue input, as
+        it would mean you wouldn't be able to move any slower than full speed. So instead, Controlify *limits* the
+        vector length to 1, but doesn't normalise it.
+        With regular joysticks, circularity is already a thing,
+        so this won't actually make any difference for most people.
+        But custom flightsticks may produce irregular results, hence this is necessary.
+         ^/
+        this.moveVector = new Vec2(left, forward);
+        float length = this.moveVector.length();
+        if (length > 1) {
+            this.moveVector = this.moveVector.scale(1f / length);
+        }
+
         *///?} else {
         this.forwardImpulse = forward;
         this.leftImpulse = left;
