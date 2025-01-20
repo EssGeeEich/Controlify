@@ -26,7 +26,6 @@ builds of Minecraft.**
     setups, like bluetooth vs wired, or system configuration.
 - Give exact battery percentage in low battery notification
   - This notification now only appears if the controller is unplugged.
-- DualSense HD haptics functionality has been temporarily disabled
 - Remove access wideners and access transformers - no longer needed
 - Provide the framework for PojavLauncher support - PojavLauncher needs an update (that is in progress) to make
   use of Controlify.

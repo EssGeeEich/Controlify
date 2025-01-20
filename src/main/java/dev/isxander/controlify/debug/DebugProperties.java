@@ -24,8 +24,6 @@ public class DebugProperties {
     public static final @Nullable String STEAM_DECK_CUSTOM_CEF_URL = strProp("controlify.debug.steam_deck_custom_cef_url", null, null);
     /** Run a mixin audit - useful for last checks before releasing a mod version */
     public static final boolean MIXIN_AUDIT = boolProp("controlify.debug.mixin_audit", false, false);
-    /** Enables the currently non-functional HD haptics support */
-    public static final boolean ENABLE_HD_HAPTICS = boolProp("controlify.debug.enable_hd_haptics", false, true);
     /** Checks SDL3 native against checksum within the jar, this improves security by only allowing an identical build of SDL3 to be loaded as to the one that this build targets at compile-time. */
     public static final boolean USE_JAR_CHECKSUM = boolProp("controlify.use_jar_checksum", true, false);
 

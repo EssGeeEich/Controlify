@@ -20,7 +20,8 @@ import net.minecraft.util.RandomSource;
 
 import javax.sound.sampled.AudioFormat;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
@@ -34,6 +35,7 @@ public class HDHapticComponent implements ECSComponent, ConfigHolder<HDHapticCom
     // the existing sound buffer library in the sound engine works on a ResourceProvider for registered sounds only
     // haptics are not sounds.
     private static final SoundBufferLibrary hapticBufferLibrary = new SoundBufferLibrary(Minecraft.getInstance().getResourceManager());
+    private static final Map<ResourceLocation, CompleteSoundData> hapticData = new HashMap<>();
 
     public HDHapticComponent() {
         this.randomSource = RandomSource.create();
@@ -42,7 +44,7 @@ public class HDHapticComponent implements ECSComponent, ConfigHolder<HDHapticCom
     public void playHaptic(ResourceLocation haptic) {
         if (!confObj().enabled || playHapticConsumer == null) return;
 
-        getSoundData(hapticBufferLibrary.getCompleteBuffer(haptic))
+        getSoundData(haptic,  hapticBufferLibrary.getCompleteBuffer(haptic))
                 .thenAccept(playHapticConsumer)
                 .exceptionally(throwable -> {
                     throwable.printStackTrace();
@@ -61,7 +63,7 @@ public class HDHapticComponent implements ECSComponent, ConfigHolder<HDHapticCom
 
         ResourceLocation soundId = CUtil.rl(location.getNamespace(), "sounds/" + location.getPath() + ".ogg");
 
-        getSoundData(bufferLibrary.getCompleteBuffer(soundId))
+        getSoundData(soundId, bufferLibrary.getCompleteBuffer(soundId))
                 .thenAccept(playHapticConsumer)
                 .exceptionally(throwable -> {
                     throwable.printStackTrace();
@@ -73,10 +75,9 @@ public class HDHapticComponent implements ECSComponent, ConfigHolder<HDHapticCom
         this.playHapticConsumer = consumer;
     }
 
-    private CompletableFuture<CompleteSoundData> getSoundData(CompletableFuture<SoundBuffer> sound) {
-        // TODO: this recomputes on every play
+    private CompletableFuture<CompleteSoundData> getSoundData(ResourceLocation id, CompletableFuture<SoundBuffer> sound) {
         return sound
-                .thenApply(soundBuffer -> {
+                .thenApply(soundBuffer -> hapticData.computeIfAbsent(id, key -> {
                     var accessor = (SoundBufferAccessor) soundBuffer;
                     ByteBuffer bytes = accessor.getData();
                     AudioFormat format = accessor.getFormat();
@@ -92,7 +93,7 @@ public class HDHapticComponent implements ECSComponent, ConfigHolder<HDHapticCom
                     bytes.get(audio);
 
                     return new CompleteSoundData(audio, format);
-                });
+                }));
     }
 
     @Override

@@ -404,7 +404,7 @@ public class ControllerConfigScreenFactory {
                         .text(Component.translatable("controlify.gui.allow_vibrations.tooltip"))
                         .build())
                 .binding(def.enabled, () -> config.enabled, v -> config.enabled = v)
-                .listener((opt, allowVibration) -> strengthOptions.forEach(so -> so.setAvailable(allowVibration)))
+                .addListener((opt, event) -> strengthOptions.forEach(so -> so.setAvailable(opt.pendingValue())))
                 .controller(TickBoxControllerBuilder::create)
                 .build());
 
@@ -489,8 +489,8 @@ public class ControllerConfigScreenFactory {
                         .range(0f, 3f)
                         .step(0.1f)
                         .formatValue(percentOrOffFormatter))
-                .listener((opt, sensitivity) -> gyroOptions.forEach(o -> {
-                    o.setAvailable(sensitivity > 0);
+                .addListener((opt, event) -> gyroOptions.forEach(o -> {
+                    o.setAvailable(opt.pendingValue() > 0);
                     o.requestSetDefault();
                 }))
                 .build());
@@ -605,7 +605,7 @@ public class ControllerConfigScreenFactory {
                 .text(Component.translatable("controlify.gui.radial_menu.btn_text"))
                 .build();
         Option<?> radialBind = createBindingOpt(ControlifyBindings.RADIAL_MENU, controller)
-                .listener((opt, val) -> updateConflictingBinds(optionBinds))
+                .addListener((opt, val) -> updateConflictingBinds(optionBinds))
                 .build();
         optionBinds.add(new OptionBindPair(radialBind, ControlifyBindings.RADIAL_MENU.on(controller)));
         category.option(editRadialButton);
@@ -629,7 +629,7 @@ public class ControllerConfigScreenFactory {
             controlsGroup.options(bindGroup.stream().flatMap(binding -> {
                 if (binding != ControlifyBindings.RADIAL_MENU.on(controller)) {
                     Option.Builder<?> option = createBindingOpt(binding, controller)
-                            .listener((opt, val) -> updateConflictingBinds(optionBinds));
+                            .addListener((opt, val) -> updateConflictingBinds(optionBinds));
 
                     Option<?> built = option.build();
                     optionBinds.add(new OptionBindPair(built, binding));
@@ -650,6 +650,7 @@ public class ControllerConfigScreenFactory {
                 .action((screen, opt) -> {
                     for (OptionBindPair pair : optionBinds) {
                         // who needs a type system?
+                        // noinspection unchecked
                         ((Option<Object>) pair.option()).requestSet(pair.binding.defaultInput());
                     }
                 })

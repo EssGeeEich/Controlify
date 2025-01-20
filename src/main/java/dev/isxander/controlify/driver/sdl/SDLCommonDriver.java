@@ -17,7 +17,6 @@ import dev.isxander.controlify.controller.info.UIDComponent;
 import dev.isxander.controlify.controller.misc.BluetoothDeviceComponent;
 import dev.isxander.controlify.controller.rumble.RumbleComponent;
 import dev.isxander.controlify.controller.rumble.TriggerRumbleComponent;
-import dev.isxander.controlify.debug.DebugProperties;
 import dev.isxander.controlify.driver.Driver;
 import dev.isxander.controlify.driver.sdl.dualsense.DS5EffectsState;
 import dev.isxander.controlify.rumble.RumbleState;
@@ -109,9 +108,10 @@ public abstract class SDLCommonDriver<SDL_Controller> implements Driver {
 
         if (CUtil.rl("dualsense").equals(type.namespace())) {
             this.isDualsense = true;
+            logger.debugLog("DualSense controller detected.");
 
             // macOS HD haptics are broken
-            if (DebugProperties.ENABLE_HD_HAPTICS && Util.getPlatform() != Util.OS.OSX) {
+            if (Util.getPlatform() != Util.OS.OSX) {
                 SDL_AudioDeviceID dualsenseAudioDev = null;
                 SDL_AudioSpec.ByReference devSpec = new SDL_AudioSpec.ByReference();
 
@@ -127,8 +127,11 @@ public abstract class SDLCommonDriver<SDL_Controller> implements Driver {
                 }
 
                 if (dualsenseAudioDev != null) {
+                    logger.debugLog("DualSense HD Haptics audio device found.");
                     this.dualsenseAudioSpec = devSpec;
                     this.dualsenseAudioDev = SDL_OpenAudioDevice(dualsenseAudioDev, (SDL_AudioSpec.ByReference) this.dualsenseAudioSpec);
+                } else {
+                    logger.debugLog("DualSense HD Haptics audio device not found.");
                 }
             }
         } else {
@@ -429,8 +432,8 @@ public abstract class SDLCommonDriver<SDL_Controller> implements Driver {
             SDL_BindAudioStream(device, stream);
 
             int[] channelMap = switch (audioSpec.channels) {
-                case 1 -> new int[]{ -1, -1, 2, 2 };
-                case 2 -> new int[]{ -1, -1, 2, 3 };
+                case 1 -> new int[]{ -1, -1, 0, 0 };
+                case 2 -> new int[]{ -1, -1, 0, 1 };
                 default -> throw new IllegalStateException("Unsupported channel count " + audioSpec.channels);
             };
             if (!SDL_SetAudioStreamOutputChannelMap(stream, channelMap)) {
