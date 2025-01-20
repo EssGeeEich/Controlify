@@ -15,6 +15,8 @@ builds of Minecraft.**
 - Added Legacy Console Edition Mode - makes the look input and vmouse feel and behave like Legacy Console Edition,
   for people who prefer it. ([by Permdog99](https://github.com/isXander/Controlify/pull/455))
 - Add another server policy: `keyboardLikeMovement`, to make servers enforce this, for anti-cheats.
+- Verify downloaded SDL natives with an additional checksum that is contained within the jar, improving security
+  by preventing the download server from providing a different binary than the one when the jar was built.
 - A new, more advanced, scoped logging system is being added throughout the mod to make debugging easier.
 
 ## Changes
