@@ -12,19 +12,19 @@ on:
   pull_request:
 
 jobs:
-  retrieve-targets:
+  generate-build-matrix:
     runs-on: ubuntu-latest
     name: Generate build matrix
 
     outputs:
-      targets: ${{ steps.get-targets.outputs.targets }}
+      matrix: ${{ steps.generate-matrix.outputs.matrix }}
 
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Get potential versions
-        id: get-targets
+        id: generate-matrix
         run: |
           MATRIX=$(
             jq '{
@@ -47,13 +47,13 @@ jobs:
           echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
 
   build:
-    needs: retrieve-targets
+    needs: generate-build-matrix
     runs-on: ubuntu-latest
     name: Build with gradle
 
     strategy:
       fail-fast: false
-      matrix: ${{ fromJson(needs.retrieve-targets.outputs.matrix) }}
+      matrix: ${{ fromJson(needs.generate-build-matrix.outputs.matrix) }}
 
     continue-on-error: ${{ matrix.experimental == 'true' }}
 
