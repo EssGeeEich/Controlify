@@ -3,7 +3,8 @@
   "builds": {
     "25w03a": {
       "platforms": ["fabric"],
-      "semver": "1.21.5"
+      "semver": "1.21.5",
+      "experimental": true
     },
     "1.21.4": {
       "platforms": ["fabric", "neoforge"]

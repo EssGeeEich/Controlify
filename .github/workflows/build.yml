@@ -14,7 +14,7 @@ on:
 jobs:
   retrieve-targets:
     runs-on: ubuntu-latest
-    name: Retrieve targets
+    name: Generate build matrix
 
     outputs:
       targets: ${{ steps.get-targets.outputs.targets }}
@@ -26,8 +26,25 @@ jobs:
       - name: Get potential versions
         id: get-targets
         run: |
-          TARGETS=$(jq -c '[.builds | to_entries[] | .value.platforms[] as $platform | "\(.key)-\($platform)"]' ./versions/builds.json)
-          echo "targets=$TARGETS" >> $GITHUB_OUTPUT
+          MATRIX=$(
+            jq '{
+              include: (
+                .builds
+                | to_entries
+                | map(
+                . as $entry
+                |
+                $entry.value.platforms
+                | map({
+                target: ($entry.key + "-" + .),
+                experimental: ($entry.value.experimental // false)
+              })
+                )
+                | flatten
+              )
+            }' input.json
+          )
+          echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
 
   build:
     needs: retrieve-targets
@@ -36,8 +53,9 @@ jobs:
 
     strategy:
       fail-fast: false
-      matrix:
-        target: ${{ fromJson(needs.retrieve-targets.outputs.targets) }}
+      matrix: ${{ fromJson(needs.retrieve-targets.outputs.matrix) }}
+
+    continue-on-error: ${{ matrix.experimental == 'true' }}
 
     steps:
       - uses: actions/checkout@v4

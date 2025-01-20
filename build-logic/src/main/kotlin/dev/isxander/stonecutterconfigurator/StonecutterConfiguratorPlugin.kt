@@ -11,14 +11,15 @@ class StonecutterConfiguratorPlugin : Plugin<Settings> {
 
         pluginManager.apply("dev.kikugie.stonecutter")
         pluginManager.withPlugin("dev.kikugie.stonecutter") {
+            val registeredBuilds = parseBuilds(settingsDir.resolve("versions/builds.json"))
+                .also { gradle.extra["registeredBuilds"] = it }
+
             extensions.configure<StonecutterSettings> {
                 kotlinController = true
                 centralScript = "build.gradle.kts"
 
                 create(rootProject) {
-                    val registeredBuilds = getRegisteredBuilds(settingsDir.resolve("versions/builds.json"))
-
-                    registeredBuilds.builds.forEach { (name, version) ->
+                    registeredBuilds.builds.forEach { (name, version, experimental) ->
                         if (ciSingleBuild != null && ciSingleBuild != name) return@forEach
 
                         vers(name, version)

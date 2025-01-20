@@ -14,10 +14,11 @@ gradlePlugin {
 repositories {
     mavenCentral()
     maven("https://maven.kikugie.dev/releases")
+    maven("https://maven.kikugie.dev/snapshots")
     maven("https://maven.isxander.dev/releases")
 }
 
 dependencies {
-    implementation("dev.kikugie.stonecutter:dev.kikugie.stonecutter.gradle.plugin:0.5")
+    implementation("dev.kikugie.stonecutter:dev.kikugie.stonecutter.gradle.plugin:0.6-alpha.5")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
 }

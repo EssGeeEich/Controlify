@@ -8,6 +8,7 @@ pluginManagement {
         maven("https://maven.neoforged.net/releases/")
         maven("https://maven.minecraftforge.net/")
         maven("https://maven.kikugie.dev/releases")
+        maven("https://maven.kikugie.dev/snapshots")
         maven("https://maven.isxander.dev/releases")
     }
 
@@ -15,6 +16,7 @@ pluginManagement {
 }
 
 plugins {
+    id("org.gradle.toolchains.foojay-resolver-convention") version "0.9.0"
     id("dev.isxander.stonecutter-configurator")
 }
 

@@ -1,3 +1,5 @@
+import dev.isxander.stonecutterconfigurator.isExperimental
+
 plugins {
     id("dev.isxander.modstitch.base")
     id("dev.isxander.modstitch.shadow")
@@ -312,7 +314,7 @@ msPublishing {
         val stableMCVersions = versionList("pub.stableMC")
 
         val modrinthId: String by project
-        if (modrinthId.isNotBlank() && hasProperty("modrinth.token")) {
+        if (modrinthId.isNotBlank() && hasProperty("modrinth.token") && !isExperimental) {
             modrinth {
                 projectId.set(modrinthId)
                 accessToken.set(findProperty("modrinth.token")?.toString())
@@ -331,7 +333,7 @@ msPublishing {
         }
 
         val curseforgeId: String by project
-        if (curseforgeId.isNotBlank() && hasProperty("curseforge.token")) {
+        if (curseforgeId.isNotBlank() && hasProperty("curseforge.token") && !isExperimental) {
             curseforge {
                 projectId = curseforgeId
                 projectSlug = findProperty("curseforgeSlug")!!.toString()
@@ -351,7 +353,7 @@ msPublishing {
         }
 
         val githubProject: String by project
-        if (githubProject.isNotBlank() && hasProperty("github.token")) {
+        if (githubProject.isNotBlank() && hasProperty("github.token") && !isExperimental) {
             github {
                 accessToken = findProperty("github.token")?.toString()
 

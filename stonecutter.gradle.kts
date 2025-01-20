@@ -1,5 +1,7 @@
 import de.undercouch.gradle.tasks.download.Download
-import dev.kikugie.stonecutter.ChiseledTask
+import dev.isxander.stonecutterconfigurator.*
+import dev.kikugie.stonecutter.controller.ChiseledTask
+import dev.kikugie.stonecutter.ide.RunConfigType
 
 plugins {
     id("me.modmuss50.mod-publish-plugin") version "0.6.1+"
@@ -20,22 +22,10 @@ if (ciSingleBuild != null) {
 stonecutter active "1.21.4-fabric" /* [SC] DO NOT EDIT */
 }
 
-fun registerChiseled(task: String, action: ChiseledTask.() -> Unit = {}): TaskProvider<ChiseledTask> {
-    return tasks.register(
-        "chiseled" + task.replaceFirstChar { it.uppercase() },
-        stonecutter.chiseled.kotlin
-    ) {
-        group = "controlify"
-        ofTask(task)
-        action(this)
-
-    }.also { stonecutter registerChiseled it }
-}
+val registeredBuilds = getRegisteredBuilds()
 
 val chiseledBuildAndCollect = registerChiseled("buildAndCollect")
-val chiseledReleaseModVersion = registerChiseled("releaseModVersion") {
-    mustRunAfter(chiseledBuildAndCollect)
-}
+val chiseledReleaseModVersion = registerChiseled("releaseModVersion")
 
 val releaseMod by tasks.registering {
     group = "controlify"
@@ -53,19 +43,23 @@ allprojects {
     }
 }
 
-stonecutter.parameters {
-    fun String.propDefined() = node!!.findProperty(this)?.toString()?.isNotBlank() ?: false
-    consts(
-        listOf(
-            "immediately-fast" to "deps.immediatelyFast".propDefined(),
-            "iris" to "deps.iris".propDefined(),
-            "mod-menu" to "deps.modMenu".propDefined(),
-            "sodium" to "deps.sodium".propDefined(),
-            "simple-voice-chat" to "deps.simpleVoiceChat".propDefined(),
-            "reeses-sodium-options" to "deps.reesesSodiumOptions".propDefined(),
-            "fancy-menu" to "deps.fancyMenu".propDefined(),
+stonecutter {
+    generateRunConfigs = listOf(RunConfigType.SWITCH)
+
+    parameters {
+        fun String.propDefined() = project(node!!.metadata.project).findProperty(this)?.toString()?.isNotBlank() ?: false
+        consts(
+            listOf(
+                "immediately-fast" to "deps.immediatelyFast".propDefined(),
+                "iris" to "deps.iris".propDefined(),
+                "mod-menu" to "deps.modMenu".propDefined(),
+                "sodium" to "deps.sodium".propDefined(),
+                "simple-voice-chat" to "deps.simpleVoiceChat".propDefined(),
+                "reeses-sodium-options" to "deps.reesesSodiumOptions".propDefined(),
+                "fancy-menu" to "deps.fancyMenu".propDefined(),
+            )
         )
-    )
+    }
 }
 
 val sdl3Target = property("deps.sdl3Target")!!.toString()
@@ -74,22 +68,23 @@ data class NativesDownload(
     val mavenSuffix: String,
     val extension: String,
     val jnaCanonicalPrefix: String,
-    val taskName: String
+    val taskName: String,
+    val windows: Boolean,
 )
 
 listOf(
-    NativesDownload("windows-x86_64", "dll", "win32-x86-64", "WinX86_64"),
-    NativesDownload("windows-x86", "dll", "win32-x86", "WinX86"),
-    NativesDownload("linux-x86_64", "so", "linux-x86-64", "LinuxX86_64"),
-    NativesDownload("linux-aarch64", "so", "linux-aarch64", "LinuxAarch64"),
-    NativesDownload("macos-universal", "dylib", "darwin-aarch64", "MacArm"),
-    NativesDownload("macos-universal", "dylib", "darwin-x86-64", "MacIntel"),
+    NativesDownload("windows-x86_64", "dll", "win32-x86-64", "WinX86_64", windows = true),
+    NativesDownload("windows-x86", "dll", "win32-x86", "WinX86", windows = true),
+    NativesDownload("linux-x86_64", "so", "linux-x86-64", "LinuxX86_64", windows = false),
+    NativesDownload("linux-aarch64", "so", "linux-aarch64", "LinuxAarch64", windows = false),
+    NativesDownload("macos-universal", "dylib", "darwin-aarch64", "MacArm", windows = false),
+    NativesDownload("macos-universal", "dylib", "darwin-x86-64", "MacIntel", windows = false),
 ).map {
     tasks.register("download${it.taskName}", Download::class) {
         group = "controlify/natives"
 
         src("https://maven.isxander.dev/releases/dev/isxander/libsdl4j-natives/$sdl3Target/libsdl4j-natives-$sdl3Target-${it.mavenSuffix}.${it.extension}")
-        dest("${layout.buildDirectory.get()}/sdl-natives/${sdl3Target}/${it.jnaCanonicalPrefix}/libSDL3.${it.extension}")
+        dest("${layout.buildDirectory.get()}/sdl-natives/${sdl3Target}/${it.jnaCanonicalPrefix}/${if (it.windows) "SDL3" else "libSDL3"}.${it.extension}")
         overwrite(false)
     }
 }.let { downloadTasks ->
@@ -200,4 +195,19 @@ publishMods {
             announcementTitle = "Download from GitHub"
         }
     }
+}
+
+fun registerChiseled(task: String, includeExperimental: Boolean = true, action: ChiseledTask.() -> Unit = {}): TaskProvider<ChiseledTask> {
+    return tasks.register(
+        "chiseled" + task.replaceFirstChar { it.uppercase() },
+        stonecutter.chiseled.kotlin
+    ) {
+        group = "controlify"
+        ofTask(task)
+        versions { _, version ->
+            includeExperimental || !registeredBuilds.builds.find { it.identifier == version.project }!!.experimental
+        }
+        action(this)
+
+    }.also { stonecutter registerChiseled it }
 }
