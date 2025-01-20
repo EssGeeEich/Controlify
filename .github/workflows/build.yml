@@ -42,7 +42,7 @@ jobs:
                 )
                 | flatten
               )
-            }' input.json
+            }' ./versions/builds.json
           )
           echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
 
