@@ -1,16 +1,11 @@
 package dev.isxander.controlify.gui.screen;
 
 import dev.isxander.controlify.Controlify;
-import dev.isxander.controlify.driver.SDL3NativesManager;
 import it.unimi.dsi.fastutil.booleans.BooleanConsumer;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ConfirmScreen;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-
-import java.util.function.Supplier;
 
 public class SDLOnboardingScreen extends ConfirmScreen implements DontInteruptScreen {
     public SDLOnboardingScreen(Runnable onceDecided, BooleanConsumer onAnswered) {

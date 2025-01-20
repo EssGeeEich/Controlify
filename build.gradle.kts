@@ -76,7 +76,7 @@ modstitch {
             prop("deps.forge") { forgeVersion = it }
         }
 
-        defaultRuns(server = false)
+        defaultRuns()
         configureNeoforge {
             runs.all {
                 disableIdeRun()
@@ -84,6 +84,9 @@ modstitch {
         }
     }
 
+    /*
+    Dynamically add mixins based on this target's supported mods.
+     */
     mixin {
         addMixinsToModManifest = true
 
@@ -98,6 +101,10 @@ modstitch {
     }
 }
 
+/*
+Prod run environment from loom!
+MDG targets don't need this, they run with named namespace.
+ */
 val productionMods: Configuration by configurations.creating {
     isTransitive = false
 }
@@ -117,6 +124,9 @@ if (isFabric) {
 createActiveTask(taskName = "runClient")
 createActiveTask(taskName = "runProdClient")
 
+/*
+Setup stonecutter for the project.
+ */
 stonecutter {
     consts(
         "fabric" to modstitch.isLoom,
@@ -131,7 +141,7 @@ stonecutter {
         "sodium" to sodiumSemver
     )
 
-    // sodium repackaged in 0.6
+    // sodium repackaged in 0.6, this allows quick swapping imports
     swaps["sodium-package"] = if (eval(sodiumSemver, ">=0.6"))
         "net.caffeinemc.mods.sodium" else "me.jellysquid.mods.sodium"
 }
@@ -235,6 +245,69 @@ dependencies {
     modDependency("fancyMenu", { "maven.modrinth:fancymenu:$it" }, supportsRuntime = false)
 }
 
+/*
+START
+Set up the configuration to put native hashes in the jar
+ */
+val offlineJar by tasks.registering(Jar::class) {
+    group = "controlify/versioned/internal"
+
+    // include the contents of the regular jar
+    val inputJar = modstitch.finalJarTask
+    from(zipTree(inputJar.flatMap { it.archiveFile }))
+    dependsOn(inputJar)
+
+    // set the classifier
+    archiveClassifier.set("offline")
+}
+tasks.assemble { dependsOn(offlineJar) }
+
+class NativeTarget(
+    val classifier: String,
+    val fileExtension: String,
+    val jnaPrefix: String,
+    val fileName: String,
+    configuration: String,
+) {
+    val configurationName = "offlineNative$configuration"
+}
+val nativeTargets = listOf(
+    NativeTarget(classifier = "linux-aarch64", fileExtension = "so", jnaPrefix = "linux-aarch64/", fileName = "libSDL3", configuration = "LinuxAarch64"),
+    NativeTarget(classifier = "linux-x86_64", fileExtension = "so", jnaPrefix = "linux-x86-64/", fileName = "libSDL3", configuration = "LinuxX86_64"),
+    NativeTarget(classifier = "macos-universal", fileExtension = "dylib", jnaPrefix = "darwin-aarch64/", fileName = "libSDL3", configuration = "MacArm"),
+    NativeTarget(classifier = "macos-universal", fileExtension = "dylib", jnaPrefix = "darwin-x86-64/", fileName = "libSDL3", configuration = "MacIntel"),
+    NativeTarget(classifier = "windows-x86", fileExtension = "dll", jnaPrefix = "win32-x86/", fileName = "SDL3", configuration = "WinX86"),
+    NativeTarget(classifier = "windows-x86_64", fileExtension = "dll", jnaPrefix = "win32-x86-64/", fileName = "SDL3", configuration = "WinX86_64"),
+)
+
+val nativeHashConfiguration = configurations.create("nativeHashes")
+
+nativeTargets.forEach { target ->
+    val nativesConfiguration = configurations.create(target.configurationName)
+
+    dependencies {
+        nativesConfiguration("dev.isxander:libsdl4j-natives:${property("deps.sdl3Target")}:${target.classifier}@${target.fileExtension}")
+        nativeHashConfiguration("dev.isxander:libsdl4j-natives:${property("deps.sdl3Target")}:${target.classifier}@${target.fileExtension}.md5")
+    }
+
+    offlineJar {
+        from(nativesConfiguration) {
+            into(target.jnaPrefix)
+            rename { "${target.fileName}.${target.fileExtension}" }
+        }
+    }
+}
+
+tasks.shadowJar {
+    from(nativeHashConfiguration) {
+        into("sdl3-hashes/")
+    }
+}
+/*
+END
+Set up the configuration to put native hashes in the jar
+ */
+
 tasks.generateModMetadata {
     eachFile {
         // don't include photoshop files for the textures for development
@@ -253,24 +326,6 @@ val releaseModVersion by tasks.registering {
         dependsOn("publish")
     }
 }
-
-val offlineJar by tasks.registering(Jar::class) {
-    group = "controlify/versioned/internal"
-
-    // include the contents of the regular jar
-    val inputJar = modstitch.finalJarTask
-    from(zipTree(inputJar.flatMap { it.archiveFile }))
-    dependsOn(inputJar)
-
-    // add the natives to the jar
-    val downloadTask = rootProject.tasks["downloadOfflineNatives"]
-    from(downloadTask.outputs.files)
-    dependsOn(downloadTask)
-
-    // set the classifier
-    archiveClassifier.set("offline")
-}
-tasks.assemble { dependsOn(offlineJar) }
 
 val finalJarTasks = listOf(
     offlineJar,

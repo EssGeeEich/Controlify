@@ -3,7 +3,7 @@ package dev.isxander.controlify.utils;
 import dev.isxander.controlify.Controlify;
 import dev.isxander.controlify.controller.ControllerEntity;
 import dev.isxander.controlify.controllermanager.ControllerManager;
-import dev.isxander.controlify.driver.SDL3NativesManager;
+import dev.isxander.controlify.driver.sdl.SDL3NativesManager;
 import dev.isxander.controlify.platform.Environment;
 import dev.isxander.controlify.platform.main.PlatformMainUtil;
 import net.minecraft.SharedConstants;

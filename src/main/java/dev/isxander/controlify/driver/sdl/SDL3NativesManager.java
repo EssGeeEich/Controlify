@@ -1,7 +1,8 @@
-package dev.isxander.controlify.driver;
+package dev.isxander.controlify.driver.sdl;
 
 import dev.isxander.controlify.Controlify;
 import dev.isxander.controlify.config.ControlifyConfig;
+import dev.isxander.controlify.debug.DebugProperties;
 import dev.isxander.controlify.gui.screen.DownloadingSDLScreen;
 import dev.isxander.controlify.platform.main.PlatformMainUtil;
 import dev.isxander.controlify.utils.CUtil;
@@ -17,6 +18,7 @@ import net.minecraft.client.Minecraft;
 import org.apache.commons.codec.digest.DigestUtils;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -84,7 +86,7 @@ public class SDL3NativesManager {
                 downloadChecksum(checksumPath);
             }
 
-            if (verifyMd5(localLibraryPath, checksumPath, true)
+            if (verifyFileMd5(localLibraryPath, checksumPath, true)
                     && loadAndStart(localLibraryPath))
                 return initFuture = CompletableFuture.completedFuture(true);
 
@@ -107,6 +109,7 @@ public class SDL3NativesManager {
         }
 
         try {
+            // TODO: this load is not checked by jar checksum - it could be getting it from an unknown source
             SdlNativeLibraryLoader.loadLibSDL3FromFilePathNow(path);
         } catch (UnsatisfiedLinkError e) {
             if (CUtil.IS_POJAV_LAUNCHER) {
@@ -133,6 +136,10 @@ public class SDL3NativesManager {
 
     private static boolean loadAndStart(Path localLibraryPath) {
         try {
+            if (!verifyJarMd5(localLibraryPath)) {
+                throw new IllegalStateException("SDL3 native library jar checksum did not match.");
+            }
+
             SdlNativeLibraryLoader.loadLibSDL3FromFilePathNow(localLibraryPath.toAbsolutePath().toString());
 
             startSDL3();
@@ -145,6 +152,9 @@ public class SDL3NativesManager {
         }
     }
 
+    /**
+     * Initialises SDL3 after it has been loaded by JNA.
+     */
     private static void startSDL3() {
         SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI, "1");
         SDL_SetHint(SDL_HINT_JOYSTICK_ENHANCED_REPORTS, "1");
@@ -169,6 +179,9 @@ public class SDL3NativesManager {
         logger.log("Successfully initialised SDL subsystems");
     }
 
+    /**
+     * Downloads the SDL3 native library and its checksum, then loads and starts it.
+     */
     private static CompletableFuture<Boolean> downloadAndStart(Path localLibraryPath) {
         return downloadLibrary(localLibraryPath.getParent())
                 .thenCompose(success -> {
@@ -181,6 +194,9 @@ public class SDL3NativesManager {
                 .thenCompose(success -> Minecraft.getInstance().submit(() -> success));
     }
 
+    /**
+     * Downloads the SDL3 native library, and its checksum, to the target folder.
+     */
     private static CompletableFuture<Boolean> downloadLibrary(Path targetFolder) {
         String artifactName = Target.CURRENT.getArtifactName();
         String md5Name = Target.CURRENT.getArtifactMD5Name();
@@ -226,14 +242,17 @@ public class SDL3NativesManager {
                     CUtil.LOGGER.log("Finished downloading SDL3 native library");
                     minecraft.execute(downloadScreen::finishDownload);
 
-                    return verifyMd5(artifactPath, md5Path, true);
+                    return verifyFileMd5(artifactPath, md5Path, true);
                 });
     }
 
-    private static boolean verifyMd5(Path filePath, Path md5Path, boolean deleteOnFail) {
+    /**
+     * Compares a file to an md5 checksum.
+     */
+    private static boolean verifyMd5(Path filePath, InputStream md5Hash) {
         try {
-            String fileMd5 = DigestUtils.md5Hex(Files.readAllBytes(filePath));
-            String checksum = Files.readString(md5Path);
+            String fileMd5 = DigestUtils.md5Hex(Files.newInputStream(filePath));
+            String checksum = new String(md5Hash.readAllBytes()).trim();
 
             if (!fileMd5.equals(checksum)) {
                 throw new Exception("Checksum did not match");
@@ -241,18 +260,53 @@ public class SDL3NativesManager {
         } catch (Exception e) {
             CUtil.LOGGER.error("Failed to verify checksum for " + filePath, e);
 
-            if (deleteOnFail) {
-                try {
-                    Files.deleteIfExists(md5Path);
-                } catch (IOException ex) {
-                    throw new RuntimeException(ex);
-                }
-            }
-
             return false;
         }
 
         return true;
+    }
+
+    /**
+     * Checks the natives against an md5 checksum stored in the file system.
+     */
+    private static boolean verifyFileMd5(Path localLibraryPath, Path checksumPath, boolean deleteOnFail) {
+        try (InputStream md5Stream = Files.newInputStream(checksumPath)) {
+            boolean verified = verifyMd5(localLibraryPath, md5Stream);
+
+            if (!verified && deleteOnFail) {
+                Files.deleteIfExists(localLibraryPath);
+            }
+
+            return verified;
+        } catch (IOException e) {
+            CUtil.LOGGER.error("Failed to read SDL3 native library checksum", e);
+            return false;
+        }
+    }
+
+    /**
+     * Checks the natives against the md5 checksum that is stored within the Controlify mod jar.
+     */
+    private static boolean verifyJarMd5(Path localLibraryPath) {
+        if (!DebugProperties.USE_JAR_CHECKSUM) {
+            if (!PlatformMainUtil.isDevEnv()) {
+                CUtil.LOGGER.warn("Jar checksum verification is disabled in production environment. Only enable this setting if you really know what you're doing. You're leaving yourself open to security vulnerabilities.");
+            }
+            return true;
+        }
+
+        String md5Name = Target.CURRENT.getArtifactMD5Name();
+        try (InputStream md5Stream = SDL3NativesManager.class.getResourceAsStream("/sdl3-hashes/" + md5Name)) {
+            if (md5Stream == null) {
+                CUtil.LOGGER.error("Failed to find SDL3 native library checksum in jar");
+                return false;
+            }
+
+            return verifyMd5(localLibraryPath, md5Stream);
+        } catch (IOException e) {
+            CUtil.LOGGER.error("Failed to read SDL3 native library checksum from jar", e);
+            return false;
+        }
     }
 
     private static CompletableFuture<?> downloadTracked(HttpClient client, HttpRequest request, DownloadingSDLScreen downloadScreen, Path folder, Minecraft minecraft) {

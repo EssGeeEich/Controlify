@@ -62,41 +62,6 @@ stonecutter {
     }
 }
 
-val sdl3Target = property("deps.sdl3Target")!!.toString()
-
-data class NativesDownload(
-    val mavenSuffix: String,
-    val extension: String,
-    val jnaCanonicalPrefix: String,
-    val taskName: String,
-    val windows: Boolean,
-)
-
-listOf(
-    NativesDownload("windows-x86_64", "dll", "win32-x86-64", "WinX86_64", windows = true),
-    NativesDownload("windows-x86", "dll", "win32-x86", "WinX86", windows = true),
-    NativesDownload("linux-x86_64", "so", "linux-x86-64", "LinuxX86_64", windows = false),
-    NativesDownload("linux-aarch64", "so", "linux-aarch64", "LinuxAarch64", windows = false),
-    NativesDownload("macos-universal", "dylib", "darwin-aarch64", "MacArm", windows = false),
-    NativesDownload("macos-universal", "dylib", "darwin-x86-64", "MacIntel", windows = false),
-).map {
-    tasks.register("download${it.taskName}", Download::class) {
-        group = "controlify/natives"
-
-        src("https://maven.isxander.dev/releases/dev/isxander/libsdl4j-natives/$sdl3Target/libsdl4j-natives-$sdl3Target-${it.mavenSuffix}.${it.extension}")
-        dest("${layout.buildDirectory.get()}/sdl-natives/${sdl3Target}/${it.jnaCanonicalPrefix}/${if (it.windows) "SDL3" else "libSDL3"}.${it.extension}")
-        overwrite(false)
-    }
-}.let { downloadTasks ->
-    tasks.register("downloadOfflineNatives") {
-        group = "controlify/natives"
-
-        downloadTasks.forEach(::dependsOn)
-
-        outputs.dir("${layout.buildDirectory.get()}/sdl-natives/${sdl3Target}")
-    }
-}
-
 // download the most up to date controller database for SDL2
 val downloadHidDb by tasks.registering(Download::class) {
     finalizedBy("convertHidDBToSDL3")

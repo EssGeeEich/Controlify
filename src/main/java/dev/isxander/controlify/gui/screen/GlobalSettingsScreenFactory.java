@@ -4,7 +4,7 @@ import dev.isxander.controlify.Controlify;
 import dev.isxander.controlify.api.ControlifyApi;
 import dev.isxander.controlify.config.GlobalSettings;
 import dev.isxander.controlify.controller.ControllerEntity;
-import dev.isxander.controlify.driver.SDL3NativesManager;
+import dev.isxander.controlify.driver.sdl.SDL3NativesManager;
 import dev.isxander.controlify.driver.steamdeck.SteamDeckUtil;
 import dev.isxander.controlify.gui.controllers.FormattableStringController;
 import dev.isxander.controlify.reacharound.ReachAroundMode;

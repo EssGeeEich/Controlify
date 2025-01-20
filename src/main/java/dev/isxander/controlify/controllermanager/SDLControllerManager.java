@@ -10,7 +10,7 @@ import dev.isxander.controlify.controller.ControllerEntity;
 import dev.isxander.controlify.debug.DebugProperties;
 import dev.isxander.controlify.driver.CompoundDriver;
 import dev.isxander.controlify.driver.Driver;
-import dev.isxander.controlify.driver.SDL3NativesManager;
+import dev.isxander.controlify.driver.sdl.SDL3NativesManager;
 import dev.isxander.controlify.driver.sdl.SDL3GamepadDriver;
 import dev.isxander.controlify.driver.sdl.SDL3JoystickDriver;
 import dev.isxander.controlify.driver.sdl.SDLUtil;
@@ -33,7 +33,6 @@ import dev.isxander.sdl3java.jna.size_t;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceProvider;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.InputStream;
 import java.util.*;
