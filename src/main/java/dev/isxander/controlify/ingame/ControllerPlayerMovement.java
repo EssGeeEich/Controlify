@@ -119,9 +119,9 @@ public class ControllerPlayerMovement extends /*? if >=1.21.2 {*/ ClientInput /*
         Starting 25w02a, movement vector is normalised (length set to 1). This won't work in analogue input, as
         it would mean you wouldn't be able to move any slower than full speed. So instead, Controlify *limits* the
         vector length to 1, but doesn't normalise it.
-        With regular joysticks, circularity is already a thing,
+        With regular thumb-sticks, circularity is already a thing,
         so this won't actually make any difference for most people.
-        But custom flightsticks may produce irregular results, hence this is necessary.
+        But custom joystick configurations may produce irregular results, hence this is necessary.
          ^/
         this.moveVector = new Vec2(left, forward);
         float length = this.moveVector.length();
