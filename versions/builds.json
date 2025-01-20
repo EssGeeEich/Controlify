@@ -1,7 +1,7 @@
 {
   "vcsVersion": "1.21.4-fabric",
   "builds": {
-    "25w02a": {
+    "25w03a": {
       "platforms": ["fabric"],
       "semver": "1.21.5"
     },
