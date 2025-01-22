@@ -11,4 +11,7 @@ public enum SteamDeckMode {
     public boolean isGamingMode() {
         return this == GAMING_MODE;
     }
+    public boolean isDesktopMode() {
+        return this == DESKTOP_MODE;
+    }
 }

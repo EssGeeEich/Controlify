@@ -2,6 +2,7 @@ package dev.isxander.controlify.driver.steamdeck;
 
 import dev.isxander.controlify.debug.DebugProperties;
 import dev.isxander.controlify.utils.CUtil;
+import dev.isxander.controlify.utils.log.ControlifyLogger;
 import dev.isxander.deckapi.api.SteamDeck;
 import dev.isxander.deckapi.api.SteamDeckException;
 import net.minecraft.resources.ResourceLocation;
@@ -9,12 +10,13 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.stream.Stream;
 
 public final class SteamDeckUtil {
+    private static final ControlifyLogger logger = CUtil.LOGGER.createSubLogger("SteamDeckUtil");
+
     private static @Nullable SteamDeck deckInstance;
     private static boolean triedToLoad = false;
 
@@ -33,7 +35,7 @@ public final class SteamDeckUtil {
         triedToLoad = true;
 
         if (!DECK_MODE.isGamingMode()) {
-            CUtil.LOGGER.warn("Device is not a Steam Deck or not in gaming mode, skipping Steam Deck driver initialization.");
+            logger.warn("Device is not a Steam Deck or not in gaming mode, skipping Steam Deck driver initialization.");
             return Optional.empty();
         }
 
@@ -43,7 +45,7 @@ public final class SteamDeckUtil {
 
             deckInstance = SteamDeck.create(url);
         } catch (SteamDeckException e) {
-            CUtil.LOGGER.error("Failed to create SteamDeck instance", e);
+            logger.error("Failed to create SteamDeck instance", e);
             deckInstance = null;
         }
 
@@ -51,21 +53,29 @@ public final class SteamDeckUtil {
     }
 
     private static boolean isHardwareSteamDeck() {
+        logger.debugLog("Checking if hardware is Steam Deck.");
+
         // even if "Linux" isn't a defacto way to check for all linux distros, it's the value returned on a steam deck
-        boolean isLinux = "Linux".equals(System.getProperty("platform.name"));
+        String platformName = System.getProperty("os.name");
+        logger.debugLog("os.name: {}", platformName);
+        boolean isLinux = "Linux".equals(platformName);
         if (!isLinux) return false;
 
-        String kernelVersion = System.getProperty("platform.version");
+        String kernelVersion = System.getProperty("os.version");
+        logger.debugLog("os.version: {}", kernelVersion);
         // steam decks use a special kernel from valve
         // this check is not used because i believe the board information is more reliable
         // as i'm not sure if it's common for people to use other kernels on steam decks
         boolean valveKernel = kernelVersion.contains("valve");
+        if (valveKernel) logger.debugLog("Detected valve kernel.");
 
         String boardVendor = readFile("/sys/class/dmi/id/board_vendor");
         if (boardVendor == null) return false;
+        logger.debugLog("Board vendor: {}", boardVendor);
 
         String boardName = readFile("/sys/class/dmi/id/board_name");
         if (boardName == null) return false;
+        logger.debugLog("Board name: {}", boardName);
 
         var validBoardNames = Stream.of(
                 "Jupiter", // LCD

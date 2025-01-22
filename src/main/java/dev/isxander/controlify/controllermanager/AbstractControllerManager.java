@@ -53,11 +53,11 @@ public abstract class AbstractControllerManager implements ControllerManager {
                 return Optional.empty();
             }
 
-            if (hidInfo.type().isSteamDeck()) {
-                if (!SteamDeckUtil.DECK_MODE.isGamingMode()) {
-                    controllerLogger.log("Preventing load of controller #{} because Steam Deck is not in gaming mode.", ucid);
-                    return Optional.empty();
-                }
+            if (hidInfo.type().isSteamDeck()
+                && SteamDeckUtil.DECK_MODE.isDesktopMode()
+            ) {
+                controllerLogger.log("Preventing load of controller #{} because Steam Deck is in desktop mode.", ucid);
+                return Optional.empty();
             }
 
             return createController(ucid, hidInfo, controllerLogger);
