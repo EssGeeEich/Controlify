@@ -42,7 +42,7 @@ public class LowBatteryNotifier {
                 if (!notifiedControllers.contains(uid)) {
                     ToastUtils.sendToast(
                             Component.translatable("controlify.toast.low_battery.title"),
-                            Component.translatable("controlify.toast.low_battery.message", controller.name(), depleting.percent()),
+                            Component.translatable("controlify.toast.low_battery.message", controller.name(), depleting.percent() + "%"),
                             true
                     );
 

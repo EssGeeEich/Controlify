@@ -125,6 +125,15 @@ createActiveTask(taskName = "runClient")
 createActiveTask(taskName = "runProdClient")
 
 /*
+Setup test harness for the project.
+ */
+val testharness by sourceSets.registering {
+    compileClasspath += sourceSets.main.get().compileClasspath
+    runtimeClasspath += sourceSets.main.get().runtimeClasspath
+}
+modstitch.createProxyConfigurations(testharness.get())
+
+/*
 Setup stonecutter for the project.
  */
 stonecutter {
@@ -170,7 +179,7 @@ dependencies {
         extra: (Boolean) -> Unit = {}
     ) {
         prop("deps.$id") { modVersion ->
-            val noRuntime = prop("deps.$id.noRuntime") { it.toString().toBoolean() } == true
+            val noRuntime = prop("deps.$id.noRuntime") { it.toBoolean() } == true
             require(noRuntime || supportsRuntime) { "No runtime is not supported for $id" }
 
             val configuration = if (requiredByDependants) {
@@ -219,10 +228,8 @@ dependencies {
 
     // sodium compat
     modDependency("sodium", { "maven.modrinth:sodium:$it" })
-
     // RSO compat
     modDependency("reesesSodiumOptions", { "maven.modrinth:reeses-sodium-options:$it" })
-
     // iris compat
     modDependency("iris", { "maven.modrinth:iris:$it" }) { runtime ->
         if (runtime) {
@@ -230,19 +237,18 @@ dependencies {
             modstitchModLocalRuntime("io.github.douira:glsl-transformer:2.0.0-pre13")
         }
     }
-
     // immediately-fast compat
     modDependency("immediatelyFast", { "maven.modrinth:immediatelyfast:$it" }) { runtime ->
         if (runtime) {
             modstitchModLocalRuntime("net.lenni0451:Reflect:1.1.0")
         }
     }
-
     // simple-voice-chat compat
     modDependency("simpleVoiceChat", { "maven.modrinth:simple-voice-chat:$it" })
-
     // fancy menu compat
     modDependency("fancyMenu", { "maven.modrinth:fancymenu:$it" }, supportsRuntime = false)
+
+    "testharnessImplementation"(sourceSets.main.get().output)
 }
 
 /*
@@ -326,6 +332,7 @@ val releaseModVersion by tasks.registering {
         dependsOn("publish")
     }
 }
+createActiveTask(releaseModVersion)
 
 val finalJarTasks = listOf(
     offlineJar,

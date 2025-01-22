@@ -27,8 +27,6 @@ class StonecutterConfiguratorPlugin : Plugin<Settings> {
                     if (ciSingleBuild == null) {
                         vcsVersion = registeredBuilds.vcsVersion
                     }
-
-                    //branch("test-harness")
                 }
             }
         }
