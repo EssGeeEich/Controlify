@@ -8,6 +8,7 @@ plugins {
     id("org.ajoberstar.grgit") version "5.0.+"
     id("dev.kikugie.stonecutter")
     id("de.undercouch.download") version "5.6.0"
+    id("org.moddedmc.wiki.toolkit") version "0.2.5"
 
     val modstitchVersion = "0.5.9"
     id("dev.isxander.modstitch.base") version modstitchVersion apply false
@@ -158,6 +159,14 @@ publishMods {
             allowEmptyFiles = true
 
             announcementTitle = "Download from GitHub"
+        }
+    }
+}
+
+wiki {
+    docs {
+        register("controlify") {
+            root = file("docs/")
         }
     }
 }
