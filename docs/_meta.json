@@ -6,5 +6,9 @@
   "reference": {
     "name": "Reference",
     "icon": null
+  },
+  "architecture": {
+    "name": "Architecture",
+    "icon": null
   }
 }
