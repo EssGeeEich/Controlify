@@ -114,6 +114,8 @@ if (isFabric) {
         group = "fabric"
 
         mods.from(productionMods)
+
+        outputs.upToDateWhen { false }
     }
 } else {
     val runProdClient by tasks.registering {
