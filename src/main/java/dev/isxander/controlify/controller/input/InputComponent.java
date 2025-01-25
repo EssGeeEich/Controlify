@@ -214,10 +214,13 @@ public class InputComponent implements ECSComponent, ConfigHolder<InputComponent
 
         public float hLookSensitivity = 1f;
         public float vLookSensitivity = 0.9f;
+        public boolean vLookInvert = false;
         public float virtualMouseSensitivity = 1f;
         public boolean reduceAimingSensitivity = true;
 
         public float buttonActivationThreshold = 0.5f;
+
+        public boolean isLCE = false;
 
         public Map<ResourceLocation, Float> deadzones = new Object2ObjectOpenHashMap<>();
         public boolean deadzonesCalibrated = false;

@@ -53,6 +53,6 @@ public class ClientPacketListenerMixin {
                 0f);
         float maxDistanceSqr = 4096f; // client only receives explosion packets within 64 blocks
 
-        return 1f - Easings.easeOutQuad(distanceSqr / maxDistanceSqr);
+        return 1f - (float)Easings.easeOutQuad(distanceSqr / maxDistanceSqr);
     }
 }

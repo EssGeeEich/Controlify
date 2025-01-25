@@ -45,7 +45,7 @@ public class LevelRendererMixin {
                     BasicRumbleEffect.join(
                             BasicRumbleEffect.constant(1f, 1f, 194),
                             BasicRumbleEffect.byTime(t -> {
-                                float easeOutQuad = Easings.easeOutQuad(t);
+                                float easeOutQuad = (float) Easings.easeOutQuad(t);
                                 return new RumbleState(1 - easeOutQuad, 1 - easeOutQuad);
                             }, 63)
                     ).prioritised(10)

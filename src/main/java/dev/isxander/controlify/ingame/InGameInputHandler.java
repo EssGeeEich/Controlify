@@ -34,8 +34,8 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Vector2d;
 import org.joml.Vector2f;
-import org.joml.Vector2fc;
 
 import java.io.File;
 
@@ -271,7 +271,7 @@ public class InGameInputHandler {
 
         boolean aiming = isAiming(player);
 
-        Vector2f lookImpulse = new Vector2f();
+        Vector2d lookImpulse = new Vector2d();
         controller.gyro().ifPresent(gyro -> handleGyroLook(gyro, lookImpulse, aiming));
 
         if (controller.gyro().map(gyro -> gyro.confObj().lookSensitivity > 0 && gyro.confObj().flickStick).orElse(false)) {
@@ -280,7 +280,7 @@ public class InGameInputHandler {
             controller.input().ifPresent(input -> handleRegularLook(input, lookImpulse, aiming, player));
         }
 
-        var modifier = new LookInputModifier(new Vector2f(lookImpulse), controller);
+        var modifier = new LookInputModifier(new Vector2f((float) lookImpulse.x, (float) lookImpulse.y), controller);
         ControlifyEvents.LOOK_INPUT_MODIFIER.invoke(modifier);
         lookImpulse.set(modifier.lookInput());
 
@@ -290,44 +290,54 @@ public class InGameInputHandler {
         wasAiming = aiming;
     }
 
-    protected void handleRegularLook(InputComponent input, Vector2f impulse, boolean aiming, LocalPlayer player) {
+    protected void handleRegularLook(InputComponent input, Vector2d impulse, boolean aiming, LocalPlayer player) {
         InputComponent.Config config = input.confObj();
 
         // normal look input
-        float impulseY = ControlifyBindings.LOOK_DOWN.on(controller).analogueNow()
-                - ControlifyBindings.LOOK_UP.on(controller).analogueNow();
-        float impulseX = ControlifyBindings.LOOK_RIGHT.on(controller).analogueNow()
-                - ControlifyBindings.LOOK_LEFT.on(controller).analogueNow();
-
-        // apply the easing on its length to preserve circularity
-        Vector2fc easedImpulse = ControllerUtils.applyEasingToLength(
-                impulseX,
-                impulseY,
-                x -> x * Math.abs(x)
+        Vector2d regularImpulse = new Vector2d(
+                ControlifyBindings.LOOK_RIGHT.on(controller).analogueNow()
+                        - ControlifyBindings.LOOK_LEFT.on(controller).analogueNow(),
+                ControlifyBindings.LOOK_DOWN.on(controller).analogueNow()
+                        - ControlifyBindings.LOOK_UP.on(controller).analogueNow()
         );
-        impulseX = easedImpulse.x();
-        impulseY = easedImpulse.y();
-
-        impulseX *= config.hLookSensitivity * 10f; // 10 degrees per second at 100% sensitivity
-        impulseY *= config.vLookSensitivity * 10f;
-
-        if (config.reduceAimingSensitivity && player.isUsingItem() && !controller.genericConfig().config().isLCE) {
-            float aimMultiplier = switch (player.getUseItem().getUseAnimation()) {
-                case BOW, SPEAR -> 0.6f;
-                case SPYGLASS -> 0.2f;
-                default -> 1f;
-            };
-            impulseX *= aimMultiplier;
-            impulseY *= aimMultiplier;
+        if (config.vLookInvert) {
+            regularImpulse.y *= -1;
         }
 
-        boolean lookIsInverted = controller.genericConfig().config().vLookInvert;
+        if (!config.isLCE) {
+            // apply the easing on its length to preserve circularity
+            ControllerUtils.applyEasingToLength(
+                    regularImpulse,
+                    d -> d * Math.abs(d)
+            );
+        } else {
+            // LCE doesn't preserve circularity
+            regularImpulse.x *= Math.abs(regularImpulse.x);
+            regularImpulse.y *= Math.abs(regularImpulse.y);
+        }
 
-        impulse.x += impulseX;
-        impulse.y += lookIsInverted ? -impulseY : impulseY;
+        if (config.reduceAimingSensitivity && player.isUsingItem()) {
+            float aimMultiplier = config.isLCE
+                    ? switch (player.getUseItem().getUseAnimation()) {
+                        case BOW, CROSSBOW, SPEAR, SPYGLASS -> 0.15f;
+                        default -> 1f;
+                    }
+                    : switch (player.getUseItem().getUseAnimation()) {
+                        case BOW, CROSSBOW, SPEAR -> 0.6f;
+                        case SPYGLASS -> 0.2f;
+                        default -> 1f;
+                    };
+            regularImpulse.mul(aimMultiplier);
+        }
+
+        // 10 degrees per second at 100% sensitivity
+        regularImpulse.x *= config.hLookSensitivity * 10f;
+        regularImpulse.y *= config.vLookSensitivity * 10f;
+
+        impulse.add(regularImpulse);
     }
 
-    protected void handleGyroLook(GyroComponent gyro, Vector2f impulse, boolean aiming) {
+    protected void handleGyroLook(GyroComponent gyro, Vector2d impulse, boolean aiming) {
         GyroComponent.Config config = gyro.confObj();
         var gyroButton = ControlifyBindings.GYRO_BUTTON.on(controller);
 
@@ -390,27 +400,8 @@ public class InGameInputHandler {
 
     public void processPlayerLook(float deltaTime) {
         if (minecraft.player != null) {
-            if (!controller.genericConfig().config().isLCE || gyroToggledOn) {
-                minecraft.player.turn(lookInputX / 0.15f * deltaTime, lookInputY / 0.15f * deltaTime);
-            } else {
-                double x = convertAxis(controller.input().get().confObj().vLookSensitivity);
-                double y = convertAxis(controller.input().get().confObj().hLookSensitivity);
-                minecraft.player.turn((-convertSmooth(lookInputX) * x) / 27.5,(-convertSmooth(lookInputY) * y) / 27.5);
-            }
+            minecraft.player.turn(lookInputX / 0.15 * deltaTime, lookInputY / 0.15 * deltaTime);
         }
-    }
-
-    public double convertAxis(float sensitivity) {
-        return Math.pow(sensitivity * (double)0.6f + (double)0.2f,3) * 7.5f * (minecraft.player.isScoping() && controller.genericConfig().config().isLCE ? 0.125: 1.0);
-    }
-
-    public double convertSmooth(double lookInput) {
-        double deadzone = controller.input().get().confObj().deadzones.size();
-        return square((lookInput > deadzone ? lookInput - deadzone : lookInput < -deadzone ? lookInput + deadzone : 0)  / (1 - deadzone));
-    }
-
-    public static double square(double f){
-        return f * f * Math.signum(f);
     }
 
     public boolean shouldShowPlayerList() {

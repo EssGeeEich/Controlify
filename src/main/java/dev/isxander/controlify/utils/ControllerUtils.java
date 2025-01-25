@@ -6,6 +6,7 @@ import net.minecraft.CrashReport;
 import net.minecraft.CrashReportCategory;
 import net.minecraft.ReportedException;
 import net.minecraft.util.Mth;
+import org.joml.Vector2d;
 import org.joml.Vector2f;
 
 import java.util.List;
@@ -46,14 +47,20 @@ public class ControllerUtils {
         return (float) (y * Math.sqrt(1 - (x * x) / 2));
     }
 
-    public static Vector2f applyEasingToLength(float x, float y, Function<Float, Float> easing) {
-        float length = Mth.sqrt(x * x + y * y);
-        float easedLength = easing.apply(length);
-        float angle = (float) Mth.atan2(y, x);
-        return new Vector2f(
-                Mth.cos(angle) * easedLength,
-                Mth.sin(angle) * easedLength
+    public static Vector2d applyEasingToLength(double x, double y, Function<Double, Double> easing) {
+        double length = Math.sqrt(x * x + y * y);
+        double easedLength = easing.apply(length);
+        double angle = Mth.atan2(y, x);
+        return new Vector2d(
+                Math.cos(angle) * easedLength,
+                Math.sin(angle) * easedLength
         );
+    }
+
+    public static Vector2d applyEasingToLength(Vector2d vec, Function<Double, Double> easing) {
+        double length = vec.length();
+        double easedLength = easing.apply(length);
+        return vec.normalize(easedLength);
     }
 
     public static boolean shouldApplyAntiSnapBack(float x, float y, float px, float py, float threshold) {

@@ -15,7 +15,6 @@ public class GenericControllerConfig implements ConfigClass {
     public boolean toggleSprint = true;
     public boolean toggleSneak = true;
     public boolean disableFlyDrifting = false;
-    public boolean vLookInvert = false;
 
     public boolean showIngameGuide = true;
     public boolean ingameGuideBottom = false;
@@ -24,6 +23,4 @@ public class GenericControllerConfig implements ConfigClass {
     public boolean showOnScreenKeyboard = true;
 
     public boolean dontShowControllerSubmission = false;
-
-    public boolean isLCE = false;
 }

@@ -35,7 +35,7 @@ public record OriginVibrationPacket(Vector3f origin, float effectRange, int dura
         var originVec3 = new Vec3(origin);
         return ContinuousRumbleEffect.builder()
                 .constant(state)
-                .inWorld(() -> originVec3, 0, 1, effectRange, Easings::easeInSine)
+                .inWorld(() -> originVec3, 0, 1, effectRange, Easings.toFloat(Easings::easeInSine))
                 .timeout(duration)
                 .build();
     }

@@ -101,15 +101,15 @@ public class VirtualMouseHandler {
 
         // apply an easing function directly to the vector's length
         // if you do easing(x), easing(y), then the diagonals where it's something like (~0.8, ~0.8) will incorrectly ease
-        Vector2f impulse = ControllerUtils.applyEasingToLength(
+        Vector2d impulse = ControllerUtils.applyEasingToLength(
                 moveRight.analogueNow() - moveLeft.analogueNow(),
                 moveDown.analogueNow() - moveUp.analogueNow(),
-                x -> (float) Math.pow(x, 3)
+                x -> Math.pow(x, 3)
         );
-        Vector2f prevImpulse = ControllerUtils.applyEasingToLength(
+        Vector2d prevImpulse = ControllerUtils.applyEasingToLength(
                 moveRight.analoguePrev() - moveLeft.analoguePrev(),
                 moveDown.analoguePrev() - moveUp.analoguePrev(),
-                x -> (float) Math.pow(x, 3)
+                x -> Math.pow(x, 3)
         );
 
 //        Vector2f fingerImpulse = ControllerUtils.applyEasingToLength(xImpulseFinger, yImpulseFinger, x -> (float) Math.pow(x, 1.5));
@@ -134,24 +134,22 @@ public class VirtualMouseHandler {
         }
 
         var sensitivity = input.config().config().virtualMouseSensitivity;
-        var windowSizeModifier = Math.max(minecraft.getWindow().getWidth(), minecraft.getWindow().getHeight()) / 800f;
 
-        if (!Controlify.instance().getCurrentController().get().genericConfig().config().isLCE) {
-            // cubic function to make small movements smaller
-            // abs to keep sign
+
+        if (!input.confObj().isLCE) {
+            float windowSizeModifier = Math.max(minecraft.getWindow().getWidth(), minecraft.getWindow().getHeight()) / 800f;
+
             targetX += impulse.x * 20f * sensitivity * windowSizeModifier;
             targetY += impulse.y * 20f * sensitivity * windowSizeModifier;
-
-            targetX = Mth.clamp(targetX, 0, minecraft.getWindow().getWidth());
-            targetY = Mth.clamp(targetY, 0, minecraft.getWindow().getHeight());
-
         } else {
-            targetX += impulse.x * ((double) minecraft.getWindow().getScreenWidth() / minecraft.getWindow().getGuiScaledWidth()) * (sensitivity) * 10f;
-            targetY += impulse.y * ((double) minecraft.getWindow().getScreenHeight() / minecraft.getWindow().getGuiScaledHeight()) * (sensitivity) * 10f;
+            float windowSizeModifier = (float) minecraft.getWindow().getScreenWidth() / minecraft.getWindow().getGuiScaledWidth();
 
-            targetX = Mth.clamp(targetX, 0, minecraft.getWindow().getWidth());
-            targetY = Mth.clamp(targetY, 0, minecraft.getWindow().getHeight());
+            targetX += impulse.x * 10f * sensitivity * windowSizeModifier;
+            targetY += impulse.y * 10f * sensitivity * windowSizeModifier;
+
         }
+        targetX = Mth.clamp(targetX, 0, minecraft.getWindow().getWidth());
+        targetY = Mth.clamp(targetY, 0, minecraft.getWindow().getHeight());
 
         scrollY += ControlifyBindings.VMOUSE_SCROLL_UP.on(controller).analogueNow()
                 - ControlifyBindings.VMOUSE_SCROLL_DOWN.on(controller).analogueNow();
