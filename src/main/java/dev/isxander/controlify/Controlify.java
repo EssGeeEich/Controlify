@@ -43,6 +43,7 @@ import dev.isxander.controlify.utils.*;
 import dev.isxander.controlify.virtualmouse.VirtualMouseHandler;
 import dev.isxander.controlify.wireless.LowBatteryNotifier;
 import dev.isxander.yacl3.gui.YACLScreen;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.multiplayer.ServerData;
@@ -719,6 +720,8 @@ public class Controlify implements ControlifyApi {
                 notifyNewServer(minecraft.getCurrentServer());
             }
         }
+
+        KeyMapping.resetToggleKeys();
 
         ControllerPlayerMovement.updatePlayerInput(minecraft.player);
 

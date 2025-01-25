@@ -21,7 +21,7 @@ public class KeyMappingEmulationOutput implements DigitalOutput {
         this.keyMapping = keyMapping;
 
         if (toggleCondition != null) {
-            ((KeyMappingHandle) keyMapping).controlify$addToggleCondition(toggleCondition);
+            ((KeyMappingHandle) keyMapping).controlify$addToggleCondition(controller, toggleCondition);
         }
     }
 

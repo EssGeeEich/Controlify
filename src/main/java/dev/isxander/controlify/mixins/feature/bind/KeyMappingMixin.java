@@ -1,6 +1,7 @@
 package dev.isxander.controlify.mixins.feature.bind;
 
 import dev.isxander.controlify.bindings.KeyMappingHandle;
+import dev.isxander.controlify.controller.ControllerEntity;
 import net.minecraft.client.KeyMapping;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -28,7 +29,7 @@ public class KeyMappingMixin implements KeyMappingHandle {
     }
 
     @Override
-    public void controlify$addToggleCondition(BooleanSupplier condition) {
+    public void controlify$addToggleCondition(ControllerEntity controller, BooleanSupplier condition) {
 
     }
 

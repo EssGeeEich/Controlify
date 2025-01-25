@@ -1,21 +1,20 @@
 package dev.isxander.controlify.mixins.feature.bind;
 
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import dev.isxander.controlify.Controlify;
 import dev.isxander.controlify.bindings.KeyMappingHandle;
-import net.minecraft.client.KeyMapping;
+import dev.isxander.controlify.controller.ControllerEntity;
 import net.minecraft.client.ToggleKeyMapping;
-import org.spongepowered.asm.mixin.Final;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Mutable;
-import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.*;
+import org.spongepowered.asm.mixin.injection.At;
 
 import java.util.function.BooleanSupplier;
 
 @Mixin(ToggleKeyMapping.class)
 public abstract class ToggleKeyMappingMixin extends KeyMappingMixin implements KeyMappingHandle {
 
-    @Shadow
-    @Final @Mutable
-    private BooleanSupplier needsToggle;
+    @Unique
+    private BooleanSupplier controlifyToggleSupplier = () -> false;
 
     @Shadow
     public abstract void setDown(boolean value);
@@ -27,9 +26,22 @@ public abstract class ToggleKeyMappingMixin extends KeyMappingMixin implements K
         this.setDown(isDown);
     }
 
+    @ModifyExpressionValue(method = "setDown", at = @At(value = "INVOKE", target = "Ljava/util/function/BooleanSupplier;getAsBoolean()Z"))
+    private boolean modifyToggleMode(boolean vanillaToggleMode) {
+        if (Controlify.instance().currentInputMode().isController()) {
+            return controlifyToggleSupplier.getAsBoolean();
+        }
+        return vanillaToggleMode;
+    }
+
     @Override
-    public void controlify$addToggleCondition(BooleanSupplier condition) {
-        BooleanSupplier oldCondition = needsToggle;
-        needsToggle = () -> oldCondition.getAsBoolean() || condition.getAsBoolean();
+    public void controlify$addToggleCondition(ControllerEntity controller, BooleanSupplier condition) {
+        BooleanSupplier oldCondition = controlifyToggleSupplier;
+        controlifyToggleSupplier = () -> {
+            boolean thisToggle = condition.getAsBoolean()
+                                 && Controlify.instance().currentInputMode().isController()
+                                 && Controlify.instance().getCurrentController().map(current -> controller == current).orElse(false);
+            return oldCondition.getAsBoolean() || thisToggle;
+        };
     }
 }
