@@ -23,4 +23,5 @@ It includes information on the resource pack features.
 - Fix crash because YACL version constraint was not strict enough
 - Fix LCE mode being framerate dependant
 - Fix NeoForge versions crashing due to a mixin error
+- Fix Enhanced Steam Deck driver sometimes failing to connect to CEF
 - Reorganise `vInvertLook` and `isLCE` options into the input component, instead of generic settings
