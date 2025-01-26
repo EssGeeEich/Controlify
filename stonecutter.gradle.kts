@@ -4,13 +4,14 @@ import dev.kikugie.stonecutter.controller.ChiseledTask
 import dev.kikugie.stonecutter.ide.RunConfigType
 
 plugins {
+    base
     id("me.modmuss50.mod-publish-plugin") version "0.6.1+"
     id("org.ajoberstar.grgit") version "5.0.+"
     id("dev.kikugie.stonecutter")
     id("de.undercouch.download") version "5.6.0"
     id("org.moddedmc.wiki.toolkit") version "0.2.5"
 
-    val modstitchVersion = "0.5.9"
+    val modstitchVersion = "0.5.12"
     id("dev.isxander.modstitch.base") version modstitchVersion apply false
     id("dev.isxander.modstitch.publishing") version modstitchVersion apply false
     id("dev.isxander.modstitch.shadow") version modstitchVersion apply false
@@ -88,6 +89,10 @@ val convertHidDBToSDL3 by tasks.registering(Copy::class) {
     filter { it.replace("Mac OS X", "macOS") }
 }
 
+tasks.clean {
+    delete(layout.buildDirectory.dir("finalJars"))
+}
+
 val modVersion: String by project
 version = modVersion
 
@@ -117,7 +122,7 @@ publishMods {
     if (hasProperty("discord.publish-webhook")) {
         discord {
             webhookUrl = findProperty("discord.publish-webhook")!!.toString()
-            dryRunWebhookUrl.set(webhookUrl)
+            dryRunWebhookUrl = findProperty("discord.publish-webhook-dry-run")?.toString()
 
             username = "Controlify Updates"
             avatarUrl = "https://raw.githubusercontent.com/isXander/Controlify/1.20.x/dev/src/main/resources/icon.png"

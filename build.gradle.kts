@@ -5,7 +5,9 @@ plugins {
     id("dev.isxander.modstitch.shadow")
     id("dev.isxander.modstitch.publishing")
 
-    id("dev.kikugie.j52j") version "1.0.3"
+    val postprocessVersion = "2.1-beta.2"
+    id("dev.kikugie.postprocess") version postprocessVersion
+    id("dev.kikugie.postprocess.j52j") version postprocessVersion
 }
 
 // version stuff
@@ -157,6 +159,10 @@ stonecutter {
         "net.caffeinemc.mods.sodium" else "me.jellysquid.mods.sodium"
 }
 
+msShadow {
+    relocatePackage = "dev.isxander.controlify.libs"
+}
+
 dependencies {
     fun Dependency?.jij() = this?.also(::modstitchJiJ)
     fun Dependency?.shadow(`package`: String, relocation: String) = this?.also {
@@ -251,6 +257,10 @@ dependencies {
     modDependency("fancyMenu", { "maven.modrinth:fancymenu:$it" }, supportsRuntime = false)
 
     "testharnessImplementation"(sourceSets.main.get().output)
+}
+
+j52j {
+    prettyPrint = true
 }
 
 /*
@@ -353,10 +363,6 @@ val buildAndCollect by tasks.registering(Copy::class) {
 }
 
 createActiveTask(buildAndCollect)
-
-msShadow {
-    relocatePackage = "dev.isxander.controlify.libs"
-}
 
 msPublishing {
     mpp {
