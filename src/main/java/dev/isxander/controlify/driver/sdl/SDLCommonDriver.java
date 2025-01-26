@@ -4,6 +4,7 @@ import com.sun.jna.Memory;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.IntByReference;
+import dev.isxander.controlify.Controlify;
 import dev.isxander.controlify.controller.ControllerEntity;
 import dev.isxander.controlify.controller.battery.BatteryLevelComponent;
 import dev.isxander.controlify.controller.battery.PowerState;
@@ -351,7 +352,19 @@ public abstract class SDLCommonDriver<SDL_Controller> implements Driver {
             bytes.add(this.guid.data.clone());
         }
 
-        return CUtil.createUIDFromBytes(bytes.toArray(new byte[0][]));
+        String uid = CUtil.createUIDFromBytes(bytes.toArray(new byte[0][]));
+
+        String nonDuplicateUid = uid;
+        int duplicateCount = (int) Controlify.instance().getControllerManager().orElseThrow()
+                .getConnectedControllers()
+                .stream()
+                .filter(controller -> controller.uid().startsWith(nonDuplicateUid))
+                .count();
+        if (duplicateCount > 0) {
+            uid += "-" + duplicateCount;
+        }
+
+        return uid;
     }
 
     protected boolean isBluetooth() {
