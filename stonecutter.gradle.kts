@@ -131,7 +131,7 @@ publishMods {
                 var newChangelog = changelog
 
                 // Remove all markdown images since Discord doesn't support them.
-                newChangelog.replace(Regex("^.*!\\[.+]\\(.+\\)\\n$"), "")
+                newChangelog = newChangelog.replace(Regex("^.*!\\[.+]\\(.+\\)\\n$"), "")
 
                 val controlifyPing = "\n\n<@&1146064258652712960>" // <@Controlify Ping>
                 if ((newChangelog.length + controlifyPing.length) > 2000) {
