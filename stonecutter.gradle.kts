@@ -104,8 +104,8 @@ publishMods {
             ?.readText()
             ?.replace("{version}", modVersion)
             ?.replace(
-                "{targets}", stonecutter.versions
-                .map { it.project }
+                "{targets}", registeredBuilds.builds
+                .map { it.identifier + (if (it.experimental) " (donator only)" else "") }
                 .joinToString(separator = "\n") { "- $it" })
             ?: "No changelog provided."
     }
@@ -129,6 +129,10 @@ publishMods {
 
             content = changelog.map { changelog ->
                 var newChangelog = changelog
+
+                // Remove all markdown images since Discord doesn't support them.
+                newChangelog.replace(Regex("^.*!\\[.+]\\(.+\\)\\n$"), "")
+
                 val controlifyPing = "\n\n<@&1146064258652712960>" // <@Controlify Ping>
                 if ((newChangelog.length + controlifyPing.length) > 2000) {
                     println("Changelog is too long for Discord, trimming.")
