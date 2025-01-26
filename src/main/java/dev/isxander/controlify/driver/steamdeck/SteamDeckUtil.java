@@ -41,7 +41,7 @@ public final class SteamDeckUtil {
 
         try {
             String url = DebugProperties.STEAM_DECK_CUSTOM_CEF_URL;
-            if (url == null) url = SteamDeck.DEFAULT_URL;
+            if (url == null) url = "http://127.0.0.1:8080";
 
             deckInstance = SteamDeck.create(url);
         } catch (SteamDeckException e) {
