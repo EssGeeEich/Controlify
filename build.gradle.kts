@@ -68,6 +68,7 @@ modstitch {
         configureLoom {
             runConfigs.all {
                 ideConfigGenerated(false)
+                vmArg("-Dsodium.checks.issue2561=false")
             }
         }
     }
@@ -116,6 +117,8 @@ if (isFabric) {
         group = "fabric"
 
         mods.from(productionMods)
+
+        jvmArgs = listOf("-Dsodium.checks.issue2561=false")
 
         outputs.upToDateWhen { false }
     }
