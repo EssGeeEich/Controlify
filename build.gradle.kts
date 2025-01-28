@@ -5,6 +5,9 @@ plugins {
     id("dev.isxander.modstitch.shadow")
     id("dev.isxander.modstitch.publishing")
 
+    // EXTREMELY EXTREMELY BROKEN
+    // RE-ENCODES NON TEXT AS TEXT
+    // BETA 3 WILL FIX THIS LATER TODAY
     val postprocessVersion = "2.1-beta.2"
     id("dev.kikugie.postprocess") version postprocessVersion
     id("dev.kikugie.postprocess.j52j") version postprocessVersion
