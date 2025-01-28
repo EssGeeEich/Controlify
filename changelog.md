@@ -8,15 +8,9 @@ This version has the following targets:
 **By donating on my [Ko-Fi](https://ko-fi.com/isxander), you will gain access to builds of Controlify for snapshot
 builds of Minecraft.**
 
-*This update includes localisation updates*
-
-Some new documentation is being written for Controlify.
-It includes information on the resource pack features.
-
-[Check it out on moddedmc.wiki](https://moddedmc.wiki/project/controlify/docs)
-
 ## Bug fixes
 
+- Fix NeoForge builds incorrectly packaging `jarJar` mods. This presented as a mixin crash on all Neo targets.
 - Fix identical model controllers being seen as the same controller which resulted in the second one to not be connected
 - Fix toggle sprint and toggle sneak options being toggle if any connected controller config is toggle,
   regardless of whether it is active, as well as the vanilla toggle setting.
@@ -25,3 +19,11 @@ It includes information on the resource pack features.
 - Fix NeoForge versions crashing due to a mixin error
 - Fix Enhanced Steam Deck driver sometimes failing to connect to CEF
 - Reorganise `vInvertLook` and `isLCE` options into the input component, instead of generic settings
+
+*This update includes localisation updates*
+
+Some new documentation is being written for Controlify.
+It includes information on the resource pack features.
+
+[Check it out on moddedmc.wiki](https://moddedmc.wiki/project/controlify/docs)
+
