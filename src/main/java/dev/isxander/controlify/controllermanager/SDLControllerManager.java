@@ -198,7 +198,7 @@ public class SDLControllerManager extends AbstractControllerManager {
 
         Optional<Resource> resourceOpt = resourceProvider
                 .getResource(CUtil.rl("controllers/gamecontrollerdb-sdl3.txt"));
-        if (resourceOpt.isEmpty() || true) {
+        if (resourceOpt.isEmpty()) {
             CUtil.LOGGER.error("Failed to find game controller database.");
             return;
         }
