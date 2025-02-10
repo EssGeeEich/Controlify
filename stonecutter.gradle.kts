@@ -125,7 +125,7 @@ publishMods {
             dryRunWebhookUrl = findProperty("discord.publish-webhook-dry-run")?.toString()
 
             username = "Controlify Updates"
-            avatarUrl = "https://raw.githubusercontent.com/isXander/Controlify/1.20.x/dev/src/main/resources/icon.png"
+            avatarUrl = "https://raw.githubusercontent.com/isXander/Controlify/multiversion/dev/src/main/resources/icon.png"
 
             content = changelog.map { changelog ->
                 var newChangelog = changelog
