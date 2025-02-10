@@ -8,7 +8,7 @@ on:
       - '.gitignore'
       - '.editorconfig'
       - 'changelog.md'
-      - 'mod-comparison.md'
+      - 'docs'
   pull_request:
 
 jobs:
