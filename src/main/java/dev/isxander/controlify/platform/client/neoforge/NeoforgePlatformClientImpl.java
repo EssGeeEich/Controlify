@@ -85,9 +85,15 @@ public class NeoforgePlatformClientImpl implements PlatformClientUtilImpl {
 
     @Override
     public void registerAssetReloadListener(ControlifyReloadListener reloadListener) {
-        getModEventBus().<RegisterClientReloadListenersEvent>addListener(e -> {
+        //? if >=1.21.4 {
+        getModEventBus().<AddClientReloadListenersEvent>addListener(e -> {
+            e.addListener(reloadListener.getReloadId(), reloadListener);
+        });
+        //?} else {
+        /^getModEventBus().<RegisterClientReloadListenersEvent>addListener(e -> {
             e.registerReloadListener(reloadListener);
         });
+        ^///?}
     }
 
     @Override
